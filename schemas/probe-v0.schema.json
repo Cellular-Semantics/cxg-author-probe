@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/probe-v0",
+  "title": "cxg-author-probe probe output (v0)",
+  "description": "One JSON file per dataset, emitted by `cxg-author probe`. Describes the obs schema, per-column sample, and probe cost — without ever reading the expression matrix. Source-format agnostic: the same schema serves h5ad, anndata-zarr, tiledbsoma, parquet, …",
+
+  "type": "object",
+  "required": ["schema_version", "dataset_id", "source", "n_cells", "columns", "probe_meta"],
+  "additionalProperties": false,
+
+  "properties": {
+    "schema_version": {
+      "const": "probe-v0",
+      "description": "Consumers MUST gate on this string."
+    },
+    "dataset_id": {
+      "type": "string",
+      "description": "Stable identifier for the source dataset. For CELLxGENE this is the CxG dataset_id UUID."
+    },
+
+    "source": {
+      "type": "object",
+      "required": ["url", "format"],
+      "additionalProperties": false,
+      "properties": {
+        "url":  {"type": "string", "description": "Fully-qualified URL or path the probe read from."},
+        "format": {
+          "enum": ["h5ad", "anndata-zarr", "tiledbsoma", "parquet"],
+          "description": "Source-format hint. Selects which reader was used."
+        },
+        "etag": {
+          "type": "string",
+          "description": "Server cache-validator (HTTP ETag) if available — used for invalidation across Census releases."
+        },
+        "size_bytes": {
+          "type": "integer",
+          "description": "Total source-file size if cheaply available; informational only."
+        }
+      }
+    },
+
+    "n_cells": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rows in obs."
+    },
+
+    "columns": {
+      "type": "object",
+      "description": "Map: obs column name -> descriptor + sample. `_index` and other source-internal pseudo-columns are filtered out at probe time.",
+      "additionalProperties": {"$ref": "#/$defs/ColumnDescriptor"}
+    },
+
+    "probe_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "probe_bytes":     {"type": "integer", "description": "Total bytes-on-wire during the probe."},
+        "probe_gets":      {"type": "integer", "description": "Number of HTTP/range fetches during the probe."},
+        "probe_time_s":    {"type": "number"},
+        "reader":          {"type": "string", "description": "Reader module that produced this probe, e.g. 'cxg_author_probe.readers.h5ad'."},
+        "package_version": {"type": "string", "description": "Version of cxg-author-probe at probe time."},
+        "probed_at":       {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+
+  "$defs": {
+    "ColumnDescriptor": {
+      "type": "object",
+      "required": ["kind", "dtype"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["categorical", "array", "group", "unknown"],
+          "description": "How the column is stored in the source. 'categorical' = code+category encoding (AnnData / pandas). 'array' = plain 1D array. 'group' = source-specific compound (rare). 'unknown' = reader did not classify."
+        },
+        "dtype": {
+          "type": "string",
+          "description": "Normalised dtype string. Categorical codes use the codes' dtype (e.g. 'int8'). Arrays use their underlying dtype (e.g. 'float32', 'object', 'bool')."
+        },
+        "n_unique": {
+          "type": ["integer", "null"],
+          "description": "Number of distinct values in the column. Cheap for categorical (== n_categories). May be null when prohibitively expensive (e.g. float columns) or unsupported by the reader."
+        },
+        "n_unique_estimated": {
+          "type": "boolean",
+          "default": false,
+          "description": "True if n_unique was computed by sampling rather than a full scan. Always false for categorical."
+        },
+        "n_categories": {
+          "type": ["integer", "null"],
+          "description": "Length of the categories table for categorical columns; null otherwise. Legacy alias of n_unique for kind=='categorical'."
+        },
+        "shape": {
+          "type": ["array", "null"],
+          "items": {"type": "integer"},
+          "description": "Underlying array shape if applicable; e.g. [n_cells] for plain 1D arrays."
+        },
+        "encoding": {
+          "type": ["string", "null"],
+          "description": "Source-specific hint (e.g. 'anndata-categorical', 'csr_matrix-indptr') for downstream consumers that care."
+        },
+        "sample": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "Head sample of up to 20 column values, normalised to JSON-serialisable. For categoricals, decoded to category labels. For bytes, decoded to UTF-8 strings."
+        }
+      }
+    }
+  }
+}

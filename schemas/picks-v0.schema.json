@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/picks-v0",
+  "title": "cxg-author-probe author cell-type picks (v0)",
+  "description": "Output of the picker stage. One file per dataset; produced by a Claude Code sub-agent, an Anthropic-API call, or any other LLM driver — even a human. The schema does not constrain *who* produced the picks, only that they match the probe.",
+
+  "type": "object",
+  "required": ["schema_version", "dataset_id", "picks"],
+  "additionalProperties": false,
+
+  "properties": {
+    "schema_version": {"const": "picks-v0"},
+    "dataset_id":     {"type": "string"},
+
+    "probe_ref": {
+      "type": "string",
+      "description": "Path to the probe-v0 JSON this pick was derived from, or its content-hash. Used to detect schema drift before assembly."
+    },
+
+    "picks": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Obs column names selected as author cell-type fields. Empty array is valid — means 'no author cell-type column present in this dataset'."
+    },
+
+    "reasoning": {
+      "type": "string",
+      "description": "One-sentence justification, for audit and disagreement triage."
+    },
+
+    "picker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["claude-code-subagent", "anthropic-api", "human", "rule-based", "other"]
+        },
+        "model": {"type": "string", "description": "Model identifier, e.g. 'claude-sonnet-4-6'. Empty for non-LLM kinds."},
+        "version": {"type": "string", "description": "Picker prompt version or package version that produced this pick."}
+      }
+    },
+
+    "picked_at": {"type": "string", "format": "date-time"}
+  }
+}

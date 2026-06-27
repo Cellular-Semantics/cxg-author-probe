@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/pulled-v0",
+  "title": "cxg-author-probe pulled-column sidecar (v0)",
+  "description": "Metadata sidecar for the full-column pull stage. The actual joinids + values live in a sibling Parquet (or .npz) file referenced by 'data_path'; this JSON describes shape, dtype, and provenance.",
+
+  "type": "object",
+  "required": ["schema_version", "dataset_id", "picks", "data_path", "n_cells"],
+  "additionalProperties": false,
+
+  "properties": {
+    "schema_version": {"const": "pulled-v0"},
+    "dataset_id":     {"type": "string"},
+    "probe_ref":      {"type": "string"},
+    "picks_ref":      {"type": "string"},
+
+    "picks": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Columns actually pulled (subset of picks-v0.picks; missing columns are noted under 'missing')."
+    },
+    "missing": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Columns that were requested but absent from the source."
+    },
+
+    "data_path": {
+      "type": "string",
+      "description": "Path to the data sidecar — .parquet by default, with columns observation_joinid + one per picked column."
+    },
+    "n_cells": {"type": "integer", "minimum": 0},
+
+    "pull_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pull_bytes":      {"type": "integer"},
+        "pull_gets":       {"type": "integer"},
+        "pull_time_s":     {"type": "number"},
+        "package_version": {"type": "string"},
+        "pulled_at":       {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}
