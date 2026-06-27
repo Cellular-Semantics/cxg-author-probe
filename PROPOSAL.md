@@ -59,15 +59,18 @@ cxg-author-probe/
 │
 ├── src/cxg_author_probe/
 │   ├── __init__.py                   # public API
-│   ├── readers/                      # ← format adapters
+│   ├── models/                       # generated from schemas/ — DO NOT EDIT
+│   │   ├── __init__.py               # re-exports ProbeV1, PicksV1, PulledV1, …
+│   │   └── _generated.py             # `make models` output
+│   ├── readers/                      # ← format adapters (behavioural Protocols)
 │   │   ├── base.py                   # ObsReader / ObsHandle protocol
 │   │   ├── h5ad.py                   # HDF5 / .h5ad (first impl)
 │   │   ├── zarr.py                   # placeholder (raises NotImplemented)
 │   │   ├── tiledbsoma.py             # placeholder
 │   │   └── registry.py               # url → reader dispatch
-│   ├── probe.py                      # describe_column, head_sample, probe()
-│   ├── prompt.py                     # build_prompt()
-│   ├── pull.py                       # pull_full_column()
+│   ├── probe.py                      # describe_column, head_sample, probe() → ProbeV1
+│   ├── prompt.py                     # build_prompt(probe: ProbeV1) -> str
+│   ├── pull.py                       # pull_full_column() → PulledV1
 │   ├── assemble.py                   # to_long_table, augment_h5ad
 │   ├── cache.py
 │   ├── picker.py                     # OPTIONAL: pick_via_api() (extra)
@@ -77,6 +80,11 @@ cxg-author-probe/
 │       ├── score.py
 │       ├── figures.py
 │       └── paper.py
+│
+├── scripts/
+│   └── generate_models.py            # codegen wrapper around datamodel-code-generator
+├── Makefile                          # `make models`, `make test`, `make build`
+│
 │
 ├── plugin/cxg-author-probe/          # the Claude plugin (loaded via marketplace)
 │   ├── .claude-plugin/plugin.json    # plugin manifest
@@ -92,30 +100,43 @@ cxg-author-probe/
 └── paper.md                          # ported from agent_celltype_eval
 ```
 
+## Data model — JSON Schema is the single source of truth
+
+The schemas in `schemas/*.schema.json` are authoritative. Python code does **not** maintain hand-written dataclasses or Pydantic models that parallel them — the models are **generated** from the schemas and re-exported as the public Python API.
+
+### Codegen
+
+- Tool: [`datamodel-code-generator`](https://github.com/koxudaxi/datamodel-code-generator) (dev dependency).
+- Target: `src/cxg_author_probe/models/_generated.py` — Pydantic v2 BaseModel classes derived from each schema.
+- Trigger: `make models` (or `just models`) regenerates after any schema edit. Generated file carries a `# DO NOT EDIT — regenerate via 'make models'` banner.
+- Drift guard: a CI test (`tests/test_schema_drift.py`) regenerates into a tempdir and `diff`s against the committed `_generated.py` — fails if they disagree.
+- Public surface: `src/cxg_author_probe/models/__init__.py` re-exports the generated classes under stable names:
+  ```python
+  from cxg_author_probe.models import ProbeV1, PicksV1, PulledV1, ColumnDescriptor
+  ```
+
+### Where the models are used
+
+- **Library functions**: `probe()` returns `ProbeV1`. `build_prompt(probe: ProbeV1)`. `pull_full_column(...)` returns a struct that serialises into `PulledV1`. The types are the contract.
+- **CLI**: `cxg-author validate <json>` runs the JSON through Pydantic (which performs both schema-level and refinement validation), reports field-level errors. Same path used by `--strict` in every CLI command.
+- **Wire format**: JSON written to disk is Pydantic's `model_dump_json()` output (which conforms to the JSON Schema). JSON read from disk is `Model.model_validate_json(text)`.
+
+This keeps language-agnostic correctness (any consumer in any language can validate against the schemas) while giving Python callers type-checked Pydantic objects.
+
 ## Reader abstraction
 
-The current implementation talks directly to `h5py`/`fsspec`. To support other formats cleanly, all source-specific access goes through a small `Protocol`:
+The reader interface is a *behavioural* contract (open files, stream columns) — not a data structure — so it stays as a Python Protocol. Data structures it produces (`ColumnDescriptor`, the per-column entry of a probe output) come from the generated models.
 
 ```python
 # src/cxg_author_probe/readers/base.py
 from typing import Protocol, runtime_checkable
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class ColumnDescriptor:
-    kind: str                       # "categorical" | "array" | "group" | "unknown"
-    dtype: str                      # normalised: "int8", "float32", "string", "bool", ...
-    n_unique: int | None            # populated for categorical; estimated/None otherwise
-    n_unique_estimated: bool        # True if computed by sampling, False if exact
-    n_categories: int | None        # alias of n_unique for categorical; None for non-cat
-    shape: tuple[int, ...] | None   # for arrays
-    encoding: str | None            # source-specific hint, e.g. "anndata-categorical"
+from cxg_author_probe.models import ColumnDescriptor   # generated
 
 @runtime_checkable
 class ObsHandle(Protocol):
     def n_cells(self) -> int: ...
     def list_columns(self) -> list[str]: ...
-    def describe(self, col: str) -> ColumnDescriptor: ...
+    def describe(self, col: str) -> ColumnDescriptor: ...   # Pydantic model from schema
     def head_sample(self, col: str, n: int = 20) -> list: ...
     def pull_full(self, col: str): ...           # -> ndarray-like (1D, n_cells)
     def joinids(self): ...                       # -> ndarray-like of observation_joinid
@@ -402,6 +423,16 @@ Programmatic side of the same project can `from cxg_author_probe import probe` d
 8. ask-census migration PR: drop vendored `src/author_annotations/`, depend on `cxg-author-probe>=0.1`. Replace local skill with plugin install pointer.
 9. `agent_celltype_eval` becomes a frozen redirect (README only).
 
+## Dependencies
+
+| Group | Packages | Why |
+|---|---|---|
+| Core runtime | `h5py`, `fsspec`, `aiohttp`, `numpy`, `pandas`, `pyarrow`, `pydantic>=2`, `typer` | probe / pull / assemble / CLI / model objects |
+| `picker-anthropic` extra | `anthropic` | Layer-2 optional Anthropic-API picker |
+| Dev | `pytest`, `datamodel-code-generator`, `ruff` | tests + Pydantic codegen + lint |
+
+Pydantic v2 ships with no compiled extensions in pure-Python mode; cluster installs stay simple.
+
 ## Resolved decisions (review 2026-05-25)
 
 - **Repo location**: `Cellular-Semantics/cxg-author-probe`. ✅
@@ -410,6 +441,7 @@ Programmatic side of the same project can `from cxg_author_probe import probe` d
 - **`source.etag`**: included from day 1. Populated when the source provides one (HTTP `ETag` header for remote, file size+mtime hash for local — or omitted; field is optional and consumers don't depend on it). ✅
 - **CLI framework**: Typer. Inherits argparse-style behaviour (auto `--help`, error on missing required args, type validation). One transitive dep (`click`); already used by many of our scientific Python neighbours. ✅
 - **Plugin manifest**: authored now using the current Claude Code marketplace pattern (`.claude-plugin/marketplace.json` at repo root, `plugin/cxg-author-probe/.claude-plugin/plugin.json` for the plugin itself). Format is evolving — we'll track it. ✅
+- **Data model authoring**: JSON Schema is the single source of truth. Pydantic v2 models are *generated* from `schemas/*.schema.json` via `datamodel-code-generator` and re-exported from `cxg_author_probe.models`. A CI drift-check guards against the generated file falling out of sync. ✅
 
 ---
 
