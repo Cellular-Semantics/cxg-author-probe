@@ -1,0 +1,16 @@
+{
+  "name": "cxg-author-probe",
+  "displayName": "CELLxGENE author annotations",
+  "version": "0.1.0",
+  "description": "Skill + sub-agent for retrieving author cell-type annotations from CELLxGENE source datasets. Shells out to the `cxg-author` CLI (from the cxg-author-probe PyPI package) for every non-LLM step.",
+  "author": {
+    "name": "David Osumi-Sutherland",
+    "email": "do12@sanger.ac.uk"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Cellular-Semantics/cxg-author-probe",
+  "repository": "https://github.com/Cellular-Semantics/cxg-author-probe",
+  "keywords": ["cellxgene", "single-cell", "author-annotations", "h5ad"],
+  "skills": "./skills/",
+  "agents": ["./agents/author-category-picker.md"]
+}

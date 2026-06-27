@@ -1,6 +1,6 @@
 # cxg-author-probe — proposal
 
-**Status:** draft for review. No implementation yet. Pause point for the user to confirm architecture before code lands.
+**Status:** design approved with clarifications (2026-05-25). Implementation begins next.
 
 ## Why this exists
 
@@ -21,9 +21,11 @@ This repo consolidates both. It separates the work into a Python package (import
 | Product | Path | Distribution | Audience |
 |---|---|---|---|
 | Python package | `src/cxg_author_probe/` | PyPI (`pip install cxg-author-probe`) | scripts, batch jobs, custom orchestrators, anything that wants the library or CLI |
-| Claude plugin | `plugin/` | git URL or local-path plugin install | Claude Code / Claude Agent SDK projects that want a drop-in skill + sub-agent |
+| Claude plugin | `plugin/cxg-author-probe/` | Claude Code marketplace at the repo root (`/plugin marketplace add Cellular-Semantics/cxg-author-probe` → `/plugin install cxg-author-probe@cxg-author-probe`) | Claude Code / Claude Agent SDK projects that want a drop-in skill + sub-agent |
 
-The plugin **depends on** the Python package (declared in `plugin.json`). Skill instructions tell the agent to shell out to the `cxg-author` CLI for every non-LLM step. Nothing is duplicated.
+The plugin **depends on** the Python package (the SKILL.md instructions tell the agent to shell out to `cxg-author` for every non-LLM step; the host environment must have it on PATH). Nothing is duplicated.
+
+**Why marketplace, not `git+url#subdirectory=...`:** Claude Code's `/plugin install` does not support subdirectory checkouts. The repo root carries a `.claude-plugin/marketplace.json` declaring one plugin (`cxg-author-probe`) located at `plugin/cxg-author-probe/`. Users add the marketplace once, then install the plugin from it. Same pattern works for adding more plugins later (e.g. an eval-only plugin) without restructuring.
 
 ## Four-layer surface
 
@@ -47,10 +49,13 @@ cxg-author-probe/
 ├── PROPOSAL.md                       this file (frozen on merge)
 ├── CHANGELOG.md
 │
+├── .claude-plugin/                   # marketplace declaration (repo root)
+│   └── marketplace.json              # lists plugin(s) hosted by this repo
+│
 ├── schemas/                          # JSON Schema, versioned
-│   ├── probe-v0.schema.json          # stage-1 output  (one per dataset)
-│   ├── picks-v0.schema.json          # stage-3 output  (one per dataset)
-│   └── pulled-v0.schema.json         # stage-4 output  (one per dataset)
+│   ├── probe-v1.schema.json          # stage-1 output  (one per dataset)
+│   ├── picks-v1.schema.json          # stage-3 output  (one per dataset)
+│   └── pulled-v1.schema.json         # stage-4 output  (one per dataset)
 │
 ├── src/cxg_author_probe/
 │   ├── __init__.py                   # public API
@@ -66,15 +71,15 @@ cxg-author-probe/
 │   ├── assemble.py                   # to_long_table, augment_h5ad
 │   ├── cache.py
 │   ├── picker.py                     # OPTIONAL: pick_via_api() (extra)
-│   ├── cli.py                        # `cxg-author` entry point
+│   ├── cli.py                        # `cxg-author` entry point (Typer)
 │   └── eval/                         # validation pipeline
 │       ├── curation.py
 │       ├── score.py
 │       ├── figures.py
 │       └── paper.py
 │
-├── plugin/                           # Claude plugin (loaded separately)
-│   ├── plugin.json                   # manifest
+├── plugin/cxg-author-probe/          # the Claude plugin (loaded via marketplace)
+│   ├── .claude-plugin/plugin.json    # plugin manifest
 │   ├── skills/author-annotations/
 │   │   ├── SKILL.md
 │   │   └── references/templates.md
@@ -139,19 +144,19 @@ First implementation: `readers/h5ad.py` (the current code, lightly refactored). 
 
 Each stage's output is **a single JSON file per dataset** validated by a JSON schema in `schemas/`.
 
-### `probe-v0.schema.json`
+### `probe-v1.schema.json`
 
 The single-source-of-truth for what a probe outputs. Sketch:
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/probe-v0",
+  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/probe-v1",
   "title": "cxg-author-probe probe output (v0)",
   "type": "object",
   "required": ["schema_version", "dataset_id", "source", "n_cells", "columns", "probe_meta"],
   "properties": {
-    "schema_version": {"const": "probe-v0"},
+    "schema_version": {"const": "probe-v1"},
     "dataset_id":     {"type": "string"},
     "source": {
       "type": "object",
@@ -204,24 +209,24 @@ Key changes vs the existing eval `probes.json` layout:
 
 | Field | New | Old (eval) | Why |
 |---|---|---|---|
-| `schema_version` | ✅ | — | Forward-compat. Consumers gate on `"probe-v0"`. |
+| `schema_version` | ✅ | — | Forward-compat. Consumers gate on `"probe-v1"`. |
 | `source.format` | ✅ | (implicit URL suffix) | Format-agnostic — `"h5ad"`, `"anndata-zarr"`, … |
 | `columns.<col>.n_unique` | ✅ | — | **New** per user request. For categoricals this == `n_categories`. For non-categorical strings/objects, computed lazily (may be `None` or `n_unique_estimated=true`) — see "n_unique strategy" below. |
 | `columns.<col>.sample` | ✅ (inline) | top-level `samples` dict | Each column self-contained. No more parallel dicts to keep aligned. |
 | `_index` filtered out | ✅ | — | The HDF5 row-index dataset is not an obs column semantically. Filtered at probe time. |
 | `curated` per-dataset | — | ✅ | Eval-only field — removed from the prod schema. Eval ground truth lives in a separate file. |
 
-### `picks-v0.schema.json`
+### `picks-v1.schema.json`
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/picks-v0",
+  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/picks-v1",
   "title": "cxg-author-probe author cell-type picks (v0)",
   "type": "object",
   "required": ["schema_version", "dataset_id", "picks"],
   "properties": {
-    "schema_version": {"const": "picks-v0"},
+    "schema_version": {"const": "picks-v1"},
     "dataset_id":     {"type": "string"},
     "probe_ref":      {"type": "string", "description": "Path or content hash of the probe JSON this pick was derived from"},
     "picks":          {"type": "array", "items": {"type": "string"}},
@@ -239,30 +244,34 @@ Key changes vs the existing eval `probes.json` layout:
 }
 ```
 
-### `pulled-v0.schema.json`
+### `pulled-v1.schema.json`
 
 For the full-column pull output. Likely Parquet on disk (not JSON) but with a JSON sidecar describing dtypes / encoding. TBD: full sketch in the first PR.
 
-## n_unique strategy
+## n_unique strategy + streaming
 
 Per user request, every column gets a `n_unique` count. How we compute it depends on `kind`:
 
 | kind | strategy | cost |
 |---|---|---|
 | `categorical` | read `len(categories)` directly | free (already done) |
-| `array` of small dtype (int8 / categorical-as-array) | full scan + `np.unique` | one extra read of the column |
-| `array` of string / object | sample-based estimate over 1000 rows; mark `n_unique_estimated=true` | one extra small read |
+| `array` of small dtype (int8 / categorical-as-array) | streamed scan accumulating a `set()` | one full column read, chunked |
+| `array` of string / object | sampled estimate over the first ~1000 rows; mark `n_unique_estimated=true` | one small range-read |
 | `array` of float / large numeric | skip; `n_unique=None` | free |
 
-The probe already pulls the full categories for every categorical, so the headline metric (`n_unique` for the obvious author cell-type candidates) is essentially free. The estimate path for non-categorical strings keeps probe cost bounded.
+**Streaming, not materialisation.** None of these strategies fully materialise the column into memory. The reader interface exposes a chunk iterator (HDF5: `Dataset.iter_chunks()` or manual slicing; Zarr: native chunked access; TileDB-SOMA: built-in batch reader). Implementations accumulate state (a `set()` or sample counter) chunk-by-chunk, so peak memory is bounded by one chunk regardless of `n_cells`.
 
-A `--exact-unique` CLI flag forces full scans where the user wants ground truth.
+This composes naturally with the remote-access story: every chunk read is one (or a few) HTTP range fetches via fsspec. A 1 M-cell object column streaming with 64 KB block size and ~10 chunks costs the same handful of MB the probe itself does, *not* the column's full materialised size.
+
+For AnnData specifically, the reader does **not** rely on `anndata.read_h5ad(..., backed="r")`. That higher-level path requires materialising obs anyway and constructs an `AnnData` object. We talk to `h5py` directly so we read obs in true lazy mode (only the chunks we touch). For consumers who do want backed-mode obs (e.g. the `augment_h5ad` path that updates a local file), that's a separate code path with its own characteristics.
+
+A `--exact-unique` CLI flag promotes the sampled path to a full streamed scan when ground truth matters more than cost.
 
 ## CLI surface
 
 ```
 cxg-author probe       <dataset_id>... [--url-template <tpl>] [--out probes/] [--workers N]
-                       Run stage 1. Emits probes/<dsid>.json (probe-v0).
+                       Run stage 1. Emits probes/<dsid>.json (probe-v1).
                        --url-template default: "https://datasets.cellxgene.cziscience.com/{}.h5ad"
 
 cxg-author render      <probe.json|probes-dir> [--out prompts/]
@@ -292,21 +301,62 @@ Each subcommand can take either a single file or a directory; it operates per-da
 
 ## Claude plugin
 
-The plugin lives at `plugin/` and is a separately-installable artefact. Installation contract:
+The plugin lives at `plugin/cxg-author-probe/` and is shipped via a marketplace declared at the repo root.
+
+### Marketplace declaration (`.claude-plugin/marketplace.json`)
+
+```json
+{
+  "name": "cxg-author-probe",
+  "owner": {
+    "name": "Cellular-Semantics",
+    "email": "do12@sanger.ac.uk",
+    "url": "https://github.com/Cellular-Semantics"
+  },
+  "plugins": [
+    {
+      "name": "cxg-author-probe",
+      "source": "./plugin/cxg-author-probe",
+      "description": "Identify and retrieve author cell-type annotations from CELLxGENE source datasets via cheap obs probes + LLM-agent picking",
+      "version": "0.1.0",
+      "category": "single-cell",
+      "tags": ["cellxgene", "single-cell", "author-annotations", "h5ad"]
+    }
+  ]
+}
+```
+
+### Plugin manifest (`plugin/cxg-author-probe/.claude-plugin/plugin.json`)
+
+```json
+{
+  "name": "cxg-author-probe",
+  "displayName": "CELLxGENE author annotations",
+  "version": "0.1.0",
+  "description": "Skill + sub-agent for retrieving author cell-type annotations from CELLxGENE source datasets",
+  "author": {"name": "David Osumi-Sutherland", "email": "do12@sanger.ac.uk"},
+  "license": "MIT",
+  "homepage": "https://github.com/Cellular-Semantics/cxg-author-probe",
+  "repository": "https://github.com/Cellular-Semantics/cxg-author-probe",
+  "keywords": ["cellxgene", "single-cell", "author-annotations", "h5ad"],
+  "skills": "./skills/",
+  "agents": ["./agents/author-category-picker.md"]
+}
+```
+
+### Installation
 
 ```
-# git URL install
-claude plugin add git+https://github.com/Cellular-Semantics/cxg-author-probe.git#subdirectory=plugin
+# add the marketplace once (per user)
+/plugin marketplace add Cellular-Semantics/cxg-author-probe
 
-# local-path install (dev)
-claude plugin add ./cxg-author-probe/plugin
+# install the plugin
+/plugin install cxg-author-probe@cxg-author-probe
 ```
 
-`plugin.json` manifest declares:
-- the contributed skill (`author-annotations`)
-- the contributed sub-agent (`author-category-picker`)
-- a runtime dep on the PyPI package (`cxg-author-probe>=0.1`)
-- minimum Claude Code version
+Local dev path is supported by `/plugin marketplace add ./path/to/cxg-author-probe`.
+
+The host environment must have the Python package on PATH (`pip install cxg-author-probe>=0.1` in the project venv) — the skill shells out to its CLI for every non-LLM step. The manifest documents this as a prerequisite; Claude Code's plugin mechanism does not currently install Python packages itself.
 
 The skill's `SKILL.md` instructs the agent to:
 - accept either a list of `dataset_id`s or a path to a query-result file
@@ -352,15 +402,15 @@ Programmatic side of the same project can `from cxg_author_probe import probe` d
 8. ask-census migration PR: drop vendored `src/author_annotations/`, depend on `cxg-author-probe>=0.1`. Replace local skill with plugin install pointer.
 9. `agent_celltype_eval` becomes a frozen redirect (README only).
 
-## Open questions for review
+## Resolved decisions (review 2026-05-25)
 
-- **Repo location**: live under `Cellular-Semantics/cxg-author-probe` (matches the eval repo's org). Confirm?
-- **Initial schema version**: tag as `v0` until first stable release? Or jump to `v1` if we're confident the shape is right? Recommend `v0` so consumers gate explicitly.
-- **n_unique computation cost**: OK with the strategy above (free for categorical, sampled for object strings, skipped for floats)? Or always compute exactly when feasible?
-- **`source.etag`**: include it from day 1? It enables cheap "is the source file unchanged?" checks across Census releases. Free to include via HTTP HEAD.
-- **CLI framework**: Typer (recommended — good ergonomics, hard typing) or argparse (zero deps)? Typer adds ~1 transitive dep.
-- **Plugin manifest format**: the Claude Code plugin format is still evolving — should we author a manifest now or land Layer 0–2 first and add the plugin as a follow-up? Recommend: stub `plugin/` now with skill + sub-agent + a placeholder `plugin.json`; finalise manifest once we have first integration into a parent project.
+- **Repo location**: `Cellular-Semantics/cxg-author-probe`. ✅
+- **Schema version**: `v1` from day 1. ✅
+- **n_unique computation**: cost-aware strategy as documented; streaming chunked reads via the reader interface, no full materialisation. Default sampled for object columns, `--exact-unique` for full scans. ✅
+- **`source.etag`**: included from day 1. Populated when the source provides one (HTTP `ETag` header for remote, file size+mtime hash for local — or omitted; field is optional and consumers don't depend on it). ✅
+- **CLI framework**: Typer. Inherits argparse-style behaviour (auto `--help`, error on missing required args, type validation). One transitive dep (`click`); already used by many of our scientific Python neighbours. ✅
+- **Plugin manifest**: authored now using the current Claude Code marketplace pattern (`.claude-plugin/marketplace.json` at repo root, `plugin/cxg-author-probe/.claude-plugin/plugin.json` for the plugin itself). Format is evolving — we'll track it. ✅
 
 ---
 
-End of proposal. **Awaiting review before implementation.**
+End of proposal. **Approved — implementation begins.**

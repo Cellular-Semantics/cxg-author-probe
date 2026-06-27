@@ -9,14 +9,18 @@ Identify and retrieve author-provided cell-type annotations from CELLxGENE-forma
 - A **Python package** (`cxg-author-probe` on PyPI) for cheap remote obs probing, full-column pulls, long-table assembly, and h5ad augmentation. Runs anywhere — no LLM dependency in the core install.
 - A **CLI** (`cxg-author`) for cluster batch jobs and orchestrators.
 - An optional **`picker-anthropic` extra** for Python-side LLM picking via the Anthropic API.
-- A **Claude plugin** (`plugin/`) bundling a skill and a sub-agent for end-to-end agentic use.
+- A **Claude plugin** at `plugin/cxg-author-probe/` bundling a skill and a sub-agent for end-to-end agentic use, served by the marketplace declared at `.claude-plugin/marketplace.json`. Install:
+  ```
+  /plugin marketplace add Cellular-Semantics/cxg-author-probe
+  /plugin install cxg-author-probe@cxg-author-probe
+  ```
 
 The data-fetching and assembly stages run with **no LLM and no internet to Anthropic**, so they can run on an HPC cluster. The LLM-required picker stage is a separate step that consumes JSON probe files and produces JSON picks files — anything that can satisfy that contract is welcome.
 
 ## What's here today
 
 - [`PROPOSAL.md`](PROPOSAL.md) — full design proposal
-- [`schemas/`](schemas/) — versioned JSON schemas defining the wire format between stages (`probe-v0`, `picks-v0`, `pulled-v0`)
+- [`schemas/`](schemas/) — versioned JSON schemas defining the wire format between stages (`probe-v1`, `picks-v1`, `pulled-v1`)
 - Empty folders for the package, plugin, tests, and eval artefacts
 
 ## What's coming

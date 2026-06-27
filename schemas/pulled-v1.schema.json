@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/pulled-v0",
+  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/pulled-v1",
   "title": "cxg-author-probe pulled-column sidecar (v0)",
   "description": "Metadata sidecar for the full-column pull stage. The actual joinids + values live in a sibling Parquet (or .npz) file referenced by 'data_path'; this JSON describes shape, dtype, and provenance.",
 
@@ -9,7 +9,7 @@
   "additionalProperties": false,
 
   "properties": {
-    "schema_version": {"const": "pulled-v0"},
+    "schema_version": {"const": "pulled-v1"},
     "dataset_id":     {"type": "string"},
     "probe_ref":      {"type": "string"},
     "picks_ref":      {"type": "string"},
@@ -17,7 +17,7 @@
     "picks": {
       "type": "array",
       "items": {"type": "string"},
-      "description": "Columns actually pulled (subset of picks-v0.picks; missing columns are noted under 'missing')."
+      "description": "Columns actually pulled (subset of picks-v1.picks; missing columns are noted under 'missing')."
     },
     "missing": {
       "type": "array",

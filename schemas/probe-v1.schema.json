@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/probe-v0",
+  "$id": "https://github.com/Cellular-Semantics/cxg-author-probe/schemas/probe-v1",
   "title": "cxg-author-probe probe output (v0)",
   "description": "One JSON file per dataset, emitted by `cxg-author probe`. Describes the obs schema, per-column sample, and probe cost — without ever reading the expression matrix. Source-format agnostic: the same schema serves h5ad, anndata-zarr, tiledbsoma, parquet, …",
 
@@ -10,7 +10,7 @@
 
   "properties": {
     "schema_version": {
-      "const": "probe-v0",
+      "const": "probe-v1",
       "description": "Consumers MUST gate on this string."
     },
     "dataset_id": {
