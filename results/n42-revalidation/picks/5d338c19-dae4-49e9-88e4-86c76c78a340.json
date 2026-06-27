@@ -1,0 +1,1 @@
+{"picks": ["cell_type_fine", "cell_type_intermediate", "cell_type_main", "initial_clustering"], "reasoning": "Author-provided cell-type annotations at fine/intermediate/main granularities plus the original cluster IDs; standardised cell_type fields excluded."}

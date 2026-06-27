@@ -1,0 +1,1 @@
+{"picks": ["ALMVISp top-3", "BICCN_cluster_label", "BICCN_subclass_label", "RNA family", "RNA type top-3"], "reasoning": "These are author-provided cell type/class/cluster annotations at varying granularity (family, subclass, cluster, top-3 mappings), excluding standardized cell_type fields and sample/QC metadata."}

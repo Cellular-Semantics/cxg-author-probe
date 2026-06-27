@@ -1,0 +1,1 @@
+{"picks": ["Author_CellType", "Author_Class_Curated", "C7_named", "C25_named", "C66_named", "C185_named", "C286_named", "C465_named"], "reasoning": "Author-provided cell-type labels at multiple granularities: explicit Author_* columns and hierarchical C*_named cluster annotations with marker/class names."}

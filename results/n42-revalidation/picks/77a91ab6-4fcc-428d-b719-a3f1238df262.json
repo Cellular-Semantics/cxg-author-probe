@@ -1,0 +1,1 @@
+{"picks": ["cell_type_alias", "cell_type_designation", "cluster", "subclass", "class", "cell_type_alt_alias"], "reasoning": "These are author-provided cell-type labels at multiple granularities (marker-encoded cluster names, neuron designations, subclass, broad class, and alt aliases), distinct from the standardised CELLxGENE cell_type fields."}

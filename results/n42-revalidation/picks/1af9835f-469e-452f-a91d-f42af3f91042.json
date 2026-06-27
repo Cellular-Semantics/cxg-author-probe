@@ -1,0 +1,1 @@
+{"picks": ["BICCN_cluster_label", "BICCN_subclass_label"], "reasoning": "BICCN_cluster_label gives fine-grained marker-encoded cell type clusters and BICCN_subclass_label gives the broader author cell class; label_for_heatmap duplicates the cluster label with a species prefix."}

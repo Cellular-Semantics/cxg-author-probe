@@ -1,0 +1,1 @@
+{"picks": ["Celltype"], "reasoning": "Celltype is the author-provided cell-type annotation with free-text labels like 'CD4, EM-like' and 'B cell, IgG+'; cell_type/cell_type_ontology_term_id are excluded as CELLxGENE-standardised."}

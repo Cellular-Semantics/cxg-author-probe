@@ -1,0 +1,1 @@
+{"picks": ["Main_cluster_name", "Organ_cell_lineage", "sub_cluster_name", "Matched_MCA_cell_name", "Matched_BCA_cell_name"], "reasoning": "These author-provided columns hold cell-type labels at broad (Main_cluster_name), lineage (Organ_cell_lineage), fine sub-cluster (sub_cluster_name), and reference-atlas-matched (Matched_MCA/BCA_cell_name) granularities."}

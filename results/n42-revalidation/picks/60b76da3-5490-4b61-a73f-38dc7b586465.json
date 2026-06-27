@@ -1,0 +1,1 @@
+{"picks": ["celltype.final", "celltype.broad_clustering_annot"], "reasoning": "These are author-provided cell-type annotations at fine (B.Resting/B.Memory) and broad (B) granularities, distinct from the standardised cell_type field."}

@@ -1,0 +1,1 @@
+{"picks": ["BICCN_class_label", "BICCN_subclass_label", "BICCN_cluster_label", "temp_class_label"], "reasoning": "BICCN class/subclass/cluster labels are author-provided cell-type annotations at multiple granularities; temp_class_label is a derived author cell-class label."}

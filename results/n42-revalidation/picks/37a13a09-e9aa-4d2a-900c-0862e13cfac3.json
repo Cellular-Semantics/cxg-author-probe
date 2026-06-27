@@ -1,0 +1,1 @@
+{"picks": ["cell_name", "cell_name_detailed", "cell_type_group"], "reasoning": "Author-provided cell-type labels at varying granularity; cell_type/cell_type_ontology_term_id are CxG-standardised and excluded."}

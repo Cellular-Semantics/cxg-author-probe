@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "seurat_clusters"], "reasoning": "author_cell_type holds author-named kidney cell-type labels (PT, TAL1, DCT1, etc.) and seurat_clusters provides author cluster IDs at finer granularity."}

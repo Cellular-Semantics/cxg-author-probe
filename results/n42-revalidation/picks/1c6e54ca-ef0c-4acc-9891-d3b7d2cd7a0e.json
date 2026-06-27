@@ -1,0 +1,1 @@
+{"picks": ["_MajorType", "_SubType"], "reasoning": "Author-provided cell-type annotations using marker-encoded layer/class names (e.g. L6-IT, L4-IT); _CellClass has only 1 category but _MajorType and _SubType give finer granularity."}

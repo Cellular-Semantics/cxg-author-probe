@@ -1,0 +1,1 @@
+{"picks": ["Cell.class", "Cell.group", "sub_cluster"], "reasoning": "Cell.class and Cell.group are author cell-type labels (Classical Monocyte / CD14+ Monocyte) and sub_cluster holds author-named finer clusters (cMono_1..3)."}

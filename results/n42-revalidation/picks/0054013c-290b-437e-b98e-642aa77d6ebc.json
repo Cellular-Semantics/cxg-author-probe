@@ -1,0 +1,1 @@
+{"picks": ["free_annotation", "louvain", "leiden"], "reasoning": "free_annotation holds author cell-type labels (8 cats), while louvain/leiden are author-derived cluster identities at different granularities; standardized cell_type fields are excluded per rules."}

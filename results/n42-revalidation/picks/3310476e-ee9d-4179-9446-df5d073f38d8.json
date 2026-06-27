@@ -1,0 +1,1 @@
+{"picks": ["free_annotation", "louvain", "leiden"], "reasoning": "free_annotation holds author cell-type labels (e.g. filiform, suprabasal); louvain/leiden are author-derived cluster IDs at multiple granularities."}

@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type holds author-provided cell-type labels (e.g., 'Undifferentiated keratinocytes II', 'Fibroblasts II'); cell_type/ontology are Census-standardised and excluded."}

@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "ct_cov"], "reasoning": "author_cell_type holds 11 author-given cell-type abbreviations (T4, cM, B, T8...) and ct_cov holds finer-grained author cell-state labels (T4_naive, B_naive, CytoT_GZMH+, NK_dim...); both are author-provided cell-type annotations not standardised CELLxGENE fields."}

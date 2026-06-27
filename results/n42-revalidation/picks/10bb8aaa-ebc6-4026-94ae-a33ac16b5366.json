@@ -1,0 +1,1 @@
+{"picks": ["BICCN_class_label", "BICCN_subclass_label", "BICCN_cluster_label", "L1CellClass"], "reasoning": "BICCN class/subclass/cluster labels and L1CellClass are author-provided cell-type annotations at multiple granularities (broad class, subclass, fine cluster)."}

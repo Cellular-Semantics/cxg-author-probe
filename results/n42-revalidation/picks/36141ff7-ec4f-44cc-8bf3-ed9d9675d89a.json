@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "seurat_clusters"], "reasoning": "author_cell_type holds named author labels (Pyr1, Olig2, etc.) and seurat_clusters provides finer-grained cluster identities; both are author-provided cell-type-like annotations distinct from the standardised cell_type field."}

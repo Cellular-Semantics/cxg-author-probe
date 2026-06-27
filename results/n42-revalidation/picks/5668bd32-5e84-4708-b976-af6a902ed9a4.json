@@ -1,0 +1,1 @@
+{"picks": ["Cell.class", "Cell.group", "Lineage"], "reasoning": "Cell.class gives fine-grained author cell-type labels (e.g. CD4+ T naive, CD8+ Tem), Cell.group gives broader cell-type groupings, and Lineage gives the highest-level author lineage annotation."}

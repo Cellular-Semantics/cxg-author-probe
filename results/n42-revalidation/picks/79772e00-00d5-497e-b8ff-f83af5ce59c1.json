@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "broad_cell_type"], "reasoning": "Both are author-provided cell-type labels at fine (60 cats) and broad (10 cats) granularity, distinct from the standardised cell_type field."}

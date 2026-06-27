@@ -1,0 +1,1 @@
+{"picks": ["_MajorType", "_SubType", "_CellClass"], "reasoning": "Author-provided cell-type annotations at class/major/subtype granularity (e.g. MSN-D1, Foxp2, SubCtx-Cplx); other columns are donor/tissue/QC/standardised ontology fields."}

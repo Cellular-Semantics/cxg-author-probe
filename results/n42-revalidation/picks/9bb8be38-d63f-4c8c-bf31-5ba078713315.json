@@ -1,0 +1,1 @@
+{"picks": ["celltype.l1", "celltype.l2", "celltype.l3"], "reasoning": "Three author-provided cell-type annotations at increasing granularity (8/31/58 categories) with PBMC-style labels."}

@@ -1,0 +1,1 @@
+{"picks": [], "reasoning": "No author-provided cell-type columns present; only standardised cell_type/cell_type_ontology_term_id exist, and remaining columns are sample/donor/QC/embedding metadata."}

@@ -1,0 +1,1 @@
+{"picks": ["Cell_Type"], "reasoning": "Cell_Type contains author-provided cell-type abbreviations (e.g., ABS, SSC) across 9 categories; other label fields are sample/polyp classifications or CELLxGENE-standardised."}

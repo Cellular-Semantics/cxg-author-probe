@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains marker-encoded cell-state labels (e.g. MG_GPNMB_LPL) at finer granularity than the standardised cell_type field."}

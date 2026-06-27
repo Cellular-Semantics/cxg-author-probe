@@ -1,0 +1,1 @@
+{"picks": ["Cell.class", "Cell.group", "Lineage"], "reasoning": "Cell.class (30 cats) and Cell.group (14 cats) are author cell-type labels at fine/broad granularity, and Lineage (8 cats) provides a coarser author lineage grouping; all are distinct from the standardised cell_type field."}

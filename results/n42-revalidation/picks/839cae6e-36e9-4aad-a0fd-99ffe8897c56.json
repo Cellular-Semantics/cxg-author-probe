@@ -1,0 +1,1 @@
+{"picks": ["CrossArea_cluster", "CrossArea_subclass", "WithinArea_cluster", "WithinArea_subclass", "Class"], "reasoning": "These columns hold author-provided cell-type/class/cluster labels at multiple granularities (broad class, subclass, and within/cross-area clusters)."}

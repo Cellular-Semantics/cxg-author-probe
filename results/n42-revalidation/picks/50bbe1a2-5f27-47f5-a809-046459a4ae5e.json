@@ -1,0 +1,1 @@
+{"picks": ["celltype_annotation"], "reasoning": "celltype_annotation has 15 author-defined cell-type abbreviation labels (F, VCT, VCT_fusing, HBC, Endo_f) at finer granularity than the standardised cell_type field."}

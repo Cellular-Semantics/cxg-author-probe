@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "seurat_clusters"], "reasoning": "author_cell_type holds author cell-type abbreviations (PC, PT, TAL, DCT1/2); seurat_clusters gives author-defined cluster IDs at a finer granularity."}

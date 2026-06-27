@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type holds free-text author-provided cell-type labels (Neutrophil, ILC, NK cell, etc.) distinct from the standardised cell_type field."}
