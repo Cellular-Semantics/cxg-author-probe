@@ -1,0 +1,1 @@
+{"picks": ["Cell.class", "Cell.group"], "reasoning": "Both are author-provided cell-type annotations at different granularities (fine subtypes like 'CD4+ T naive' and broader groups like 'CD4+ T cell'); Lineage is too coarse (single category) and the remaining cell_type fields are CELLxGENE-standardised."}

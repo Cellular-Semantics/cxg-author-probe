@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "broad_cell_type"], "reasoning": "author_cell_type holds fine-grained author labels (e.g. Oligo_A, In_1, EC_cap_1) and broad_cell_type holds the coarser author class (Oligo, Neuron_In, OPC); both are author-provided cell-type annotations distinct from the standardised cell_type field."}

@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "seurat_clusters"], "reasoning": "author_cell_type holds author-named cell-type labels (Pyr1, Olig2, Micro1, Astro2, etc.) and seurat_clusters provides finer-grained author cluster IDs; both are author-provided annotations distinct from the CELLxGENE-standardised cell_type field."}

@@ -1,0 +1,1 @@
+{"picks": ["celltype.broad_clustering_annot", "celltype.final"], "reasoning": "These are author-provided cell-type annotations using lineage shorthand (MO, T.CD8, T.MAIT, B, T.CD4, NK), distinct from CELLxGENE-standardised cell_type fields."}

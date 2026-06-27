@@ -1,0 +1,1 @@
+{"picks": ["cell.type.coarse", "cell.type.fine", "seurat_clusters", "singler"], "reasoning": "These are author-provided cell-type annotations at multiple granularities (coarse/fine labels), Seurat cluster IDs, and SingleR-assigned cell-type labels; the standardised cell_type fields are excluded per rules."}

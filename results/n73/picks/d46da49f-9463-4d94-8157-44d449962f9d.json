@@ -1,0 +1,1 @@
+{"picks": ["cluster"], "reasoning": "The 'cluster' column contains author-named cell-type cluster labels (e.g., OPCs, Astrocytes, Excitatory_4, Inhibitory_1, Oligodendrocytes) at finer granularity than the standardised cell_type field."}

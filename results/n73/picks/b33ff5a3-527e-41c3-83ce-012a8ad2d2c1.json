@@ -1,0 +1,1 @@
+{"picks": ["Class", "CrossArea_subclass", "CrossArea_cluster", "WithinArea_subclass", "WithinArea_cluster"], "reasoning": "These author-provided fields encode cell-type annotations at multiple granularities (broad class, subclass, and cluster) using neuronal type labels like 'excitatory' and 'L2/3 IT_6'."}

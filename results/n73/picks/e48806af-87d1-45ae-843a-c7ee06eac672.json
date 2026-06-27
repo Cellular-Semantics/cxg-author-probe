@@ -1,0 +1,1 @@
+{"picks": ["BICCN_class_label", "BICCN_cluster_label", "BICCN_ontology_term_id"], "reasoning": "These BICCN_* columns are author-provided cell-type annotations at multiple granularities (broad class like Inhibitory/Excitatory, fine cluster labels like Vip/L4, and an author ontology term id), distinct from the standardised cell_type fields."}

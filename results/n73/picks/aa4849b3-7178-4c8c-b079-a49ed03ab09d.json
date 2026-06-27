@@ -1,0 +1,1 @@
+{"picks": ["Celltype"], "reasoning": "Celltype contains author-provided marker-encoded cell-type labels (e.g., 'Fibroblasts ADAMDEC1', 'Myofibroblasts HHIP NPNT') at finer granularity than the standardised cell_type field."}

@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type holds free-text author-provided cell-type labels (e.g. 'Fibroblast 1', 'Stroma progenitor', 'Myofibroblast 1') across 44 categories, while cell_type/cell_type_ontology_term_id are CELLxGENE-standardised and other fields are sample/donor/tissue/assay metadata."}

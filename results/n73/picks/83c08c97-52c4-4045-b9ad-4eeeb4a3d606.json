@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains marker-encoded dopaminergic neuron subtype labels (e.g., SOX6_AGTR1, SOX6_DDT) provided by the authors, while other fields are donor/sample/QC or CELLxGENE-standardised metadata."}

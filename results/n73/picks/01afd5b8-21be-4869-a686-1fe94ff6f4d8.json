@@ -1,0 +1,1 @@
+{"picks": ["Class", "CrossArea_subclass", "CrossArea_cluster", "WithinArea_subclass", "WithinArea_cluster"], "reasoning": "These are author-provided cell-type annotations at multiple granularities (broad class, subclass, and cluster levels) for both cross-area and within-area taxonomies."}

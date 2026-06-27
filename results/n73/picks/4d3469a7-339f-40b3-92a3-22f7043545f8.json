@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains author-provided cell-type labels (e.g. 'Undifferentiated keratinocytes II', 'Fibroblasts I/II', 'Melanocytes/melanocyte-like') at finer granularity than the standardised cell_type field."}

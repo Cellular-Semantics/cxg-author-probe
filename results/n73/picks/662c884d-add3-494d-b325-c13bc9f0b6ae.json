@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains 12 marker-encoded microglial subtype labels (e.g. MG_GPNMB_LPL), which is the author-provided cell-type annotation; other fields are CxG-standardised or sample/donor/QC metadata."}

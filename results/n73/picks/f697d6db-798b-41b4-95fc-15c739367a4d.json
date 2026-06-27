@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains marker-encoded author-provided cell subtype labels (e.g., 'Olig_PLXDC2_SFRP1'); all other fields are CxG-standardised, donor/sample metadata, or QC."}

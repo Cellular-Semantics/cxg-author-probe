@@ -1,0 +1,1 @@
+{"picks": ["Cell.class_reannotated", "Cell.group", "Lineage", "cluster_labels_res.0.4"], "reasoning": "These four author-provided columns capture cell-type annotations at multiple granularities: fine reannotated classes, broader cell groups, top-level lineage, and named cluster labels."}

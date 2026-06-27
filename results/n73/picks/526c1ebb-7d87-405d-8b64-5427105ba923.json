@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains author-provided cell-type labels (e.g. naive B cell, memory B cell, plasmablast); other categorical fields are sample/donor/disease/QC metadata or CELLxGENE-standardised cell_type fields."}

@@ -1,0 +1,1 @@
+{"picks": ["BICCN_class_label", "BICCN_subclass_label", "BICCN_cluster_label", "temp_class_label"], "reasoning": "These BICCN/author-provided columns hold cell-type labels at multiple granularities (class, subclass, fine cluster, and a combined class label), while standardised cell_type fields and ontology/QC/sample metadata are excluded."}

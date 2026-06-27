@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains author-provided short marker/cluster cell-type labels (e.g. PT_PROM1, DCT2, PST, PCT, TAL2) distinct from the standardised cell_type field."}

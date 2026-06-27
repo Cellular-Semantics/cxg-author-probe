@@ -1,0 +1,1 @@
+{"picks": ["Cell.class", "Cell.group", "Lineage"], "reasoning": "These three author-provided columns capture cell-type labels at increasing granularity: Lineage (broad), Cell.group (mid), and Cell.class (fine)."}

@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type contains author-provided cell-type labels (e.g. NK_CD16hi, NK_CD56loCD16lo, classical monocyte) distinct from the standardised cell_type field."}

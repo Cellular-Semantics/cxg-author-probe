@@ -1,0 +1,1 @@
+{"picks": ["free_annotation", "louvain", "leiden"], "reasoning": "free_annotation holds author-provided named cell-type/state labels (e.g. 'suprabasal', 'parabasal'), while louvain and leiden are author-derived cluster identifiers at additional granularities; other fields are CxG-standardised, sample/donor, tissue, assay or QC metadata."}

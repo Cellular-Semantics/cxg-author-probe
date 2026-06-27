@@ -1,0 +1,1 @@
+{"picks": ["celltype_annotation"], "reasoning": "celltype_annotation contains author-provided cell-type labels (e.g. VCT, HBC, Endo_f, F) at finer granularity than the standardised cell_type field."}

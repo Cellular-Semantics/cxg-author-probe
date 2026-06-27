@@ -1,0 +1,1 @@
+{"picks": ["Cell.class", "Cell.group", "Lineage", "sub_cluster"], "reasoning": "Cell.class/Cell.group/Lineage are author-provided cell-type/lineage labels (all 'Platelet'/'Hematopoietic_Mega' here), and sub_cluster contains author-named platelet subcluster labels (plt_0..plt_5)."}

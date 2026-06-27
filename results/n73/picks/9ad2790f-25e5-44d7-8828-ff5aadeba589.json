@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type"], "reasoning": "author_cell_type holds author-provided cell-type labels (e.g. Neutrophil, ILC, Mast); other fields are standardised CxG, sample/donor, QC, or tissue metadata."}

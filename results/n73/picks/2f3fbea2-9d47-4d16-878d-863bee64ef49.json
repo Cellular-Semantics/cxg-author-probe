@@ -1,0 +1,1 @@
+{"picks": [], "reasoning": "No author-provided cell-type-like obs columns are present; only the standardised cell_type/cell_type_ontology_term_id fields exist, and all remaining columns are sample/donor/tissue/assay/QC/embedding metadata."}

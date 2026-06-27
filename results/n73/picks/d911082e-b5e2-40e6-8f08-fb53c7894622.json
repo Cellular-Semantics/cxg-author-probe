@@ -1,0 +1,1 @@
+{"picks": ["annotation_broad", "annotation_detailed", "annotation_detailed_fullNames"], "reasoning": "These three columns contain author-provided cell-type labels at broad (16 cats) and detailed (42 cats) granularities, with full-name variants, distinct from the standardised cell_type field."}

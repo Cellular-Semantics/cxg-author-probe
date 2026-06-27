@@ -1,0 +1,1 @@
+{"picks": ["celltype.broad_clustering_annot", "celltype.final"], "reasoning": "Both columns contain author-provided T cell type labels at broad (T.CD8, T.CD4) and fine (T.CD8.Eff, T.CD4.CM, etc.) granularities."}

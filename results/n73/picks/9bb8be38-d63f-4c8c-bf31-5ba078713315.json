@@ -1,0 +1,1 @@
+{"picks": ["celltype.l1", "celltype.l2", "celltype.l3"], "reasoning": "These three columns are author-provided PBMC cell-type annotations at progressively finer granularity (8, 31, and 58 categories) using canonical immune labels like CD14 Mono, CD4 TCM, CD8 Naive."}

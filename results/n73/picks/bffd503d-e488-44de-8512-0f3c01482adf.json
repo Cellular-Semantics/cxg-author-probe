@@ -1,0 +1,1 @@
+{"picks": ["Celltype"], "reasoning": "Celltype contains author-provided fine-grained marker-encoded cell-type labels (e.g., 'Stem cells OLFM4 PCNA'); other categorical fields are CxG-standardised or sample/donor metadata."}

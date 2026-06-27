@@ -1,0 +1,1 @@
+{"picks": ["Celltype"], "reasoning": "Celltype contains author-provided cell-type labels (e.g., 'NK cell', 'CD4, EM-like', 'classical Monocyte') distinct from the standardised cell_type/cell_type_ontology_term_id fields."}

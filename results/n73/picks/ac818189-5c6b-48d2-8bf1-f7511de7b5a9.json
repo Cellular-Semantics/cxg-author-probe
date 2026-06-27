@@ -1,0 +1,9 @@
+{
+    "picks": [
+        "cell_type_original",
+        "major_subset",
+        "minor_subset",
+        "cluster"
+    ],
+    "reasoning": "These are author-provided cell-type annotations at increasing granularity (broad original label, major subset, minor subset, fine-grained cluster); *_source variants are concatenations with disease state and GEX_region is an embedding-region label, so excluded."
+}

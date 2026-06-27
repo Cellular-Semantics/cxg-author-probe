@@ -1,0 +1,1 @@
+{"picks": ["class", "subclass", "subtype"], "reasoning": "Author-provided cell-type annotations at three granularities: broad class (Glia/ExN/InN), subclass (e.g. Oligo, L2-3 IT, SST HGF), and fine marker-encoded subtype (e.g. Oligo MOG OPALIN)."}

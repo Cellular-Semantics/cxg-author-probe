@@ -1,0 +1,1 @@
+{"picks": ["cell_type_fine", "cell_type_intermediate", "cell_type_main", "initial_clustering"], "reasoning": "These are author-provided cell-type annotations at fine, intermediate, and main granularities, plus an initial clustering label, while cell_type and cell_type_ontology_term_id are CELLxGENE-standardised and excluded."}

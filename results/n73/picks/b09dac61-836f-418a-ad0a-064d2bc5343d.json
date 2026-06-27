@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "clusters_res_0.5"], "reasoning": "author_cell_type contains author-provided cell-type labels (e.g. cvLSEC, LAM-like, lrNK, C-Hepato2) and clusters_res_0.5 provides cluster-level annotations at a different granularity."}

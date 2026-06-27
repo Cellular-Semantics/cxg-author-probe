@@ -1,0 +1,1 @@
+{"picks": ["Class", "CrossArea_subclass", "CrossArea_cluster", "WithinArea_subclass", "WithinArea_cluster"], "reasoning": "These are author-provided cell-type annotations at multiple granularities: broad class (inhibitory etc.), subclass (Lamp5 etc.), and fine clusters (Lamp5_1 etc.), defined both cross-area and within-area."}

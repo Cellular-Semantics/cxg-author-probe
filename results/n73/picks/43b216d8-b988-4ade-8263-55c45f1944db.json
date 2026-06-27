@@ -1,0 +1,1 @@
+{"picks": ["_CellClass", "_MajorType", "_SubType"], "reasoning": "These underscore-prefixed author fields hold cell-type labels at varying granularity (broad class, major type, subtype); other fields are CxG-standardised, sample/donor/tissue, or QC metadata."}

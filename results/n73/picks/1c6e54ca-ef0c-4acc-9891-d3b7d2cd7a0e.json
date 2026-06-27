@@ -1,0 +1,1 @@
+{"picks": ["_CellClass", "_MajorType", "_SubType"], "reasoning": "These author-provided columns contain cell-class and cell-type labels (e.g. 'Excitatory Neurons', 'L4-IT') at broader and finer granularities, distinct from the standardised cell_type field."}

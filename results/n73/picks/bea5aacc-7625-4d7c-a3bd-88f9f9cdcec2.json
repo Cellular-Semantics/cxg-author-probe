@@ -1,0 +1,1 @@
+{"picks": ["Celltype", "Cluster"], "reasoning": "Celltype holds author cell-type labels (13 categories, e.g. 'T cells') and Cluster holds author-assigned cluster IDs (17 categories) representing finer granularity."}

@@ -1,0 +1,1 @@
+{"picks": ["cell_name", "cell_name_detailed", "cell_type_group"], "reasoning": "These are author-provided cell-type annotations at different granularities (named labels, detailed labels, and broad grouping), while cell_type/cell_type_ontology_term_id are CELLxGENE-standardised and excluded."}

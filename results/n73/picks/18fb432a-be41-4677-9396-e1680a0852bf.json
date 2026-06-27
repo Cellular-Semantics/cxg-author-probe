@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "broad_lineage", "dev_state", "subtype", "precisest_label", "orig_cluster", "orig_sub_cluster"], "reasoning": "These author-provided columns capture cell-type labels at multiple granularities, from broad lineage through dev_state/subtype to the precisest_label, plus original cluster IDs encoding author cell groupings."}

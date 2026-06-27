@@ -1,0 +1,1 @@
+{"picks": ["Cell.class", "Cell.group", "Lineage", "sub_cluster"], "reasoning": "These are author-provided cell-type/lineage/cluster annotations at different granularities (class, group, lineage, sub-cluster), distinct from the CELLxGENE-standardised cell_type fields."}

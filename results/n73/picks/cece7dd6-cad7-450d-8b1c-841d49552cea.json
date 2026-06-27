@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "ct_cov"], "reasoning": "author_cell_type holds broad author labels (T4, cM, B, T8) and ct_cov holds finer-grained author labels (T4_naive, B_naive, CytoT_GZMH+, NK_dim); cell_state is just 'na' and other fields are sample/donor/QC metadata."}

@@ -1,0 +1,1 @@
+{"picks": ["Celltype"], "reasoning": "Celltype contains author-provided fine-grained cell-type labels with marker-encoded names (e.g., 'T cells CD8 KLRG1', 'IELs ID3 ENTPD1'); other fields are sample/donor/tissue/QC or standardized CELLxGENE cell_type."}

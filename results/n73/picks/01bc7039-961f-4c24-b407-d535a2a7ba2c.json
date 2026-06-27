@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "seurat_clusters"], "reasoning": "author_cell_type contains author-provided kidney cell-type abbreviations (PT, TAL1, DCT2, etc.) and seurat_clusters provides cluster-level annotations at a different granularity."}

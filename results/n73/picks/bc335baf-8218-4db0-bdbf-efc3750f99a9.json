@@ -1,0 +1,1 @@
+{"picks": ["Re-annotation"], "reasoning": "Re-annotation contains author-provided cell-type labels (e.g. 'spinous', 'basal2') at finer granularity than the standardised cell_type field."}

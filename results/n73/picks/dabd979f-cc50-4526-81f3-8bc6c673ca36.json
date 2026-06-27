@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "seurat_clusters"], "reasoning": "author_cell_type holds author-provided cell-type abbreviations (e.g., PCT, PT_VCAM1) and seurat_clusters provides cluster-level labels at a different granularity."}

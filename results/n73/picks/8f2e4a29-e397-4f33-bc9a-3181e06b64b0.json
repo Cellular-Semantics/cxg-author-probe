@@ -1,0 +1,1 @@
+{"picks": ["author_cell_type", "ct_cov"], "reasoning": "author_cell_type holds broad author labels (T4, cM, B, T8, etc.) and ct_cov provides finer-grained author cell-type/state labels (T4_naive, B_naive, CytoT_GZMH+, NK_dim); other categoricals are sample/donor/QC/standardised ontology fields."}

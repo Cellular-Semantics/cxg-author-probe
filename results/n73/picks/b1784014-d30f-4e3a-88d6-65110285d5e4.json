@@ -1,0 +1,1 @@
+{"picks": ["Celltype"], "reasoning": "Celltype contains author-provided cell-type labels with marker-encoded names (e.g., 'T cells CD4 FOSB', 'NK-like cells ID3 ENTPD1') at finer granularity than the standardized cell_type field."}

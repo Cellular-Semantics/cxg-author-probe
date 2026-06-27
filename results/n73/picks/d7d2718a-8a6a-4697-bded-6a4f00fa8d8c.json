@@ -1,0 +1,1 @@
+{"picks": ["Cell_Type"], "reasoning": "Cell_Type contains author-provided abbreviated cell-type labels (GOB, TAC, ASC, TUF) corresponding to the standardised cell_type field; other columns are sample/donor/tissue/disease metadata or CELLxGENE-standardised."}

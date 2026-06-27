@@ -1,0 +1,1 @@
+{"picks": ["class", "subclass.l1", "subclass.l2", "cluster_id"], "reasoning": "These are author-provided kidney cell-type annotations at broad (class), intermediate (subclass.l1, subclass.l2) and cluster-level (cluster_id) granularities, distinct from the standardised cell_type fields."}
