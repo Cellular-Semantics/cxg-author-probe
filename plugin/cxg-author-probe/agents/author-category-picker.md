@@ -27,9 +27,11 @@ You will be given two file paths:
    - sample / donor / tissue / assay / disease / development_stage / suspension_type / batch / library_uuid / sequencing_pool
    - QC / numeric metadata (counts, percentages, percentages of mito, doublet scores)
    - embeddings or numeric per-cell quantities
-3. **Cluster IDs are a judgement call**: include `seurat_clusters`, `leiden`, `louvain` etc. **only** when their values look like cell-type *names* rather than bare integers. A column whose samples are `0, 1, 2, 3, ...` is a cluster ID; one whose samples are `"Mono", "B", "T"` is a label. The `n_unique` count is a hint — bare cluster IDs typically have one entry per cluster.
-4. **Multiple picks are encouraged** for datasets with hierarchical author annotations (broad + fine + cluster).
-5. **Empty picks are valid** — return `[]` if no obs column genuinely contains author cell-type labels.
+3. **Reject number-only values, even when string-encoded.** If a column's sample values are entirely numeric — bare integers, integer-as-string (`'0', '1', '2'`), floats, or numeric ranges — it is a cluster index or score, not a cell-type label. This is the case **even if the column is categorical with many categories**: e.g. `seurat_clusters | categorical[30 cats] | 30 | '12', '9', '18', '21'` is a cluster ID column and must be rejected. The fact that integers are string-typed in the source does not make them labels. Cell-type labels are words: `'Mono'`, `'CD4 T cell'`, `'L2/3 IT neuron'`, `'cMono_1'` (mixed letter+digit names are fine).
+4. **Reject constant columns.** A column with `n_unique == 1` and `n_unique_estimated == False` carries no per-cell information — every cell has the same value. It's a dataset-level annotation (e.g. tissue, lineage of an isolated population), not a cell-type label. Skip even if the single value reads like a cell type.
+5. **Include lineage columns when they describe per-cell identity.** "Lineage" and "compartment" annotations (e.g. `lineage_level1` with values like `Epithelial`, `Endothelial`, `Immune`) are author-provided cell-type-like labels at a high level of the Cell Ontology. The CL ontology itself classifies cells by lineage — broad cell categories are still cell types. Pick them. The exception remains rule 4: a `lineage` column that is constant across all cells isn't useful.
+6. **Multiple picks are encouraged** for datasets with hierarchical author annotations (broad + fine + cluster, or lineage + cell-type + sub-cluster).
+7. **Empty picks are valid** — return `[]` if no obs column genuinely contains author cell-type labels.
 
 ## Output
 
@@ -45,4 +47,4 @@ Then output nothing else.
 
 - Recall is the easy part; precision is harder. When in doubt about a column, prefer **not** to pick it — the cost of an extra picked column is higher than the cost of missing a finer granularity.
 - Sample-value preview is your strongest signal. If the first 10 values look like cell-type names, pick. If they look like integers, dates, donor IDs, or library identifiers, do not pick.
-- When the dataset author has clearly used a naming convention (e.g. `Cell.class`, `Cell.group`, `Lineage`, `sub_cluster` together), picking the matching set is correct even if some of those names are unusual.
+- When the dataset author has clearly used a naming convention (e.g. `Cell.class`, `Cell.group`, `Lineage`, `sub_cluster` together), picking the matching set is correct — *unless* the candidate columns trip rule 4 (constant) or rule 3 (numeric-only). Don't pick a `Cell.class` column whose `n_unique` is 1.
