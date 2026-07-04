@@ -5,6 +5,6 @@ Each reader implements the `ObsReader` Protocol (from `.base`) and returns an
 dispatches to the right reader based on the URL.
 """
 from .base import ObsHandle, ObsReader
-from .registry import open_obs, register_reader
+from .registry import open_obs, refresh_readers, register_reader
 
-__all__ = ["ObsHandle", "ObsReader", "open_obs", "register_reader"]
+__all__ = ["ObsHandle", "ObsReader", "open_obs", "refresh_readers", "register_reader"]

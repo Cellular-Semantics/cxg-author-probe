@@ -6,14 +6,13 @@ Returns a `ProbeV1` Pydantic model (schema source of truth in
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Optional
 
 import numpy as np
 
 from ._version import __version__
 from .models import ColumnDescriptor, ColumnKind, Format, ProbeMeta, ProbeV1, Source
-from .readers import open_obs
-from .readers.h5ad import byte_counter, _PSEUDO_COLUMNS  # type: ignore[attr-defined]
+from .readers.h5ad import _PSEUDO_COLUMNS, byte_counter  # type: ignore[attr-defined]
+from .readers.registry import pick_reader
 
 
 def _exact_unique(values: np.ndarray) -> int | None:
@@ -97,7 +96,7 @@ def _compute_n_unique(
 def probe(
     url: str,
     *,
-    dataset_id: Optional[str] = None,
+    dataset_id: str | None = None,
     sample_n: int = 20,
     exact_unique: bool = False,
 ) -> ProbeV1:
@@ -127,7 +126,8 @@ def probe(
     stats: dict[str, int] = {}
     with byte_counter(stats):
         t0 = datetime.now(timezone.utc)
-        handle = open_obs(url)
+        reader_cls = pick_reader(url)
+        handle = reader_cls().open(url)
         try:
             n_cells = handle.n_cells()
             columns: dict[str, ColumnDescriptor] = {}
@@ -149,8 +149,8 @@ def probe(
                         encoding=f"ERR: {e}",
                     )
 
-            reader_module = type(handle).__module__
-            fmt = _format_from_reader_module(reader_module)
+            reader_module = reader_cls.__module__
+            fmt = _format_from_reader(reader_cls)
 
             elapsed = (datetime.now(timezone.utc) - t0).total_seconds()
             probe_meta = ProbeMeta(
@@ -174,11 +174,14 @@ def probe(
     )
 
 
-def _format_from_reader_module(module: str) -> Format:
-    if module.endswith(".h5ad"):
+def _format_from_reader(reader_cls: type) -> Format:
+    """Map a reader's ``FORMAT`` attribute onto the ``Format`` enum.
+
+    Reader ``FORMAT`` strings are contracted to match ``Format`` values
+    (see ``readers.base.ObsReader``). An unknown / missing value falls back to
+    ``h5ad`` rather than failing the probe.
+    """
+    try:
+        return Format(reader_cls.FORMAT)
+    except (ValueError, TypeError):
         return Format.h5ad
-    if module.endswith(".zarr"):
-        return Format.anndata_zarr
-    if module.endswith(".tiledbsoma"):
-        return Format.tiledbsoma
-    return Format.h5ad  # default — unreachable today
