@@ -182,6 +182,6 @@ def _format_from_reader(reader_cls: type) -> Format:
     ``h5ad`` rather than failing the probe.
     """
     try:
-        return Format(reader_cls.FORMAT)
+        return Format(getattr(reader_cls, "FORMAT", None))
     except (ValueError, TypeError):
         return Format.h5ad
