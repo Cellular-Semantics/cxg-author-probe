@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # requires-python = ">=3.10,<3.13". 3.10 verifies the zarr-gated path
+        # (zarr absent → zarr reader tests importorskip); 3.11/3.12 run the
+        # AnnData-zarr reader end-to-end.
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run tests
+        # Includes the schema-drift guard (datamodel-code-generator) + reader
+        # tests. Lint (ruff) is intentionally not gated yet — pre-existing
+        # findings repo-wide; add once cleaned up.
+        run: uv run --python ${{ matrix.python-version }} --extra dev pytest
