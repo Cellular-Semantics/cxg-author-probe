@@ -27,12 +27,17 @@ dependencies = [
 [project.optional-dependencies]
 picker-anthropic = ["anthropic>=0.40"]
 eval = ["matplotlib>=3.8", "anndata>=0.10"]
+# AnnData-zarr reader runtime deps (imported lazily; numpy is already a base dep).
+# zarr>=3 requires Python >=3.11, so it's unavailable on the 3.10 slice of the
+# supported range — the reader simply can't be used there.
+zarr = ["zarr>=3; python_version >= '3.11'"]
 dev = [
     "pytest>=8",
     "datamodel-code-generator>=0.26",
     "ruff>=0.5",
     "anndata>=0.10",
     "matplotlib>=3.8",
+    "zarr>=3; python_version >= '3.11'",
 ]
 
 [project.scripts]
