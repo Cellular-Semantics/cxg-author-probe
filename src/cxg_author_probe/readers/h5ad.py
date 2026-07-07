@@ -5,6 +5,7 @@ reads only the `/obs` group, never touches `/X` or any other top-level group.
 Class-level `_fetch_range` instrumentation on `HTTPFile` measures bytes-on-
 wire across nested probes via a counter stack.
 """
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -83,6 +84,36 @@ _PSEUDO_COLUMNS = frozenset({"_index"})
 _DEFAULT_STREAM_CHUNK = 16_384
 
 
+def _enc(node) -> str | None:
+    e = node.attrs.get("encoding-type") if hasattr(node, "attrs") else None
+    return e.decode() if isinstance(e, bytes) else e
+
+
+def _is_nullable(node) -> bool:
+    # AnnData >=0.13 stores string/nullable columns (and the index /
+    # observation_joinid) as a group {values, mask} with a "nullable-*-array"
+    # encoding rather than a plain dataset.
+    return (
+        isinstance(node, h5py.Group)
+        and str(_enc(node) or "").startswith("nullable")
+        and "values" in node
+    )
+
+
+def _decode_bytes_array(data) -> np.ndarray:
+    out = np.empty(len(data), dtype=object)
+    for i, v in enumerate(data):
+        out[i] = v.decode(errors="replace") if isinstance(v, bytes) else v
+    return out
+
+
+def _read_nullable_full(group) -> np.ndarray:
+    out = _decode_bytes_array(group["values"][:])
+    if "mask" in group:
+        out[np.asarray(group["mask"][:], dtype=bool)] = None
+    return out
+
+
 def _describe(node) -> ColumnDescriptor:
     if isinstance(node, h5py.Group):
         if "categories" in node and "codes" in node:
@@ -104,6 +135,15 @@ def _describe(node) -> ColumnDescriptor:
                     n_unique=None,
                     n_categories=None,
                 )
+        if _is_nullable(node):
+            values = node["values"]
+            return ColumnDescriptor(
+                kind=ColumnKind.array,
+                dtype=str(values.dtype),
+                shape=list(values.shape),
+                n_unique=None,
+                encoding=_enc(node),
+            )
         return ColumnDescriptor(kind=ColumnKind.group, dtype="?", n_unique=None)
     try:
         return ColumnDescriptor(
@@ -126,6 +166,15 @@ def _head_sample(node, n: int = 20):
                 for c in codes
                 if 0 <= c < len(cats)
             ]
+        except Exception as e:
+            return f"ERR: {e}"
+    if _is_nullable(node):
+        try:
+            vals = _decode_bytes_array(node["values"][:n]).tolist()
+            if "mask" in node:
+                mask = np.asarray(node["mask"][:n], dtype=bool).tolist()
+                vals = [None if m else v for v, m in zip(vals, mask, strict=False)]
+            return vals
         except Exception as e:
             return f"ERR: {e}"
     try:
@@ -191,6 +240,18 @@ def _iter_chunks(node, chunk_size: int = _DEFAULT_STREAM_CHUNK) -> Iterator[np.n
             yield out
         return
 
+    if _is_nullable(node):
+        values = node["values"]
+        mask = node["mask"] if "mask" in node else None
+        n = values.shape[0]
+        for start in range(0, n, chunk_size):
+            stop = min(start + chunk_size, n)
+            out = _decode_bytes_array(values[start:stop])
+            if mask is not None:
+                out[np.asarray(mask[start:stop], dtype=bool)] = None
+            yield out
+        return
+
     # Plain dataset.
     n = node.shape[0]
     is_bytes_like = node.dtype.kind in ("S", "O")
@@ -210,6 +271,7 @@ def _iter_chunks(node, chunk_size: int = _DEFAULT_STREAM_CHUNK) -> Iterator[np.n
 # ObsHandle / ObsReader
 # ---------------------------------------------------------------------------
 
+
 class _H5adHandle:
     """ObsHandle for an open h5ad file."""
 
@@ -220,16 +282,20 @@ class _H5adHandle:
             raise ValueError("no /obs group in source")
         self._obs = h5["obs"]
 
+    def _len(self, node) -> int:
+        if isinstance(node, h5py.Group) and "codes" in node:
+            return int(node["codes"].shape[0])
+        if _is_nullable(node):
+            return int(node["values"].shape[0])
+        return int(node.shape[0])
+
     def n_cells(self) -> int:
         if "observation_joinid" in self._obs:
-            return int(self._obs["observation_joinid"].shape[0])
-        # Fall back: first column's shape.
+            return self._len(self._obs["observation_joinid"])
+        # Fall back: first column's length.
         for k in self._obs.keys():
-            node = self._obs[k]
-            if isinstance(node, h5py.Group) and "codes" in node:
-                return int(node["codes"].shape[0])
             try:
-                return int(node.shape[0])
+                return self._len(self._obs[k])
             except Exception:
                 continue
         return 0
@@ -250,10 +316,15 @@ class _H5adHandle:
         node = self._obs[col]
         if isinstance(node, h5py.Group) and "categories" in node:
             return _decode_categorical_full(node)
+        if _is_nullable(node):
+            return _read_nullable_full(node)
         return _decode_array_full(node)
 
     def joinids(self) -> np.ndarray:
-        return _decode_array_full(self._obs["observation_joinid"])
+        node = self._obs["observation_joinid"]
+        if _is_nullable(node):
+            return _read_nullable_full(node)
+        return _decode_array_full(node)
 
     def close(self) -> None:
         try:
