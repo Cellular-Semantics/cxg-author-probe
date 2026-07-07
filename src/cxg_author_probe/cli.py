@@ -7,6 +7,7 @@ The picker stage 3 is NOT part of this CLI by default — that's the
 LLM-required step and is delegated to a Claude Code sub-agent (or to
 `cxg-author pick` if the `picker-anthropic` extra is installed).
 """
+
 from __future__ import annotations
 
 import json
@@ -38,12 +39,17 @@ DEFAULT_CDN = "https://datasets.cellxgene.cziscience.com/{dataset_id}.h5ad"
 # probe
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def probe(
     dataset_ids: list[str] = typer.Argument(..., help="Dataset IDs (UUIDs) or full URLs."),
     out: Path = typer.Option(Path("probes"), "--out", "-o", help="Output directory."),
-    url_template: str = typer.Option(DEFAULT_CDN, "--url-template", help="URL template; {dataset_id} is substituted."),
-    exact_unique: bool = typer.Option(False, "--exact-unique", help="Compute exact n_unique on every column."),
+    url_template: str = typer.Option(
+        DEFAULT_CDN, "--url-template", help="URL template; {dataset_id} is substituted."
+    ),
+    exact_unique: bool = typer.Option(
+        False, "--exact-unique", help="Compute exact n_unique on every column."
+    ),
     force: bool = typer.Option(False, "--force", help="Re-probe even if a cached probe exists."),
 ) -> None:
     """Stage 1: probe obs schemas. Writes one probe-v1 JSON per dataset."""
@@ -72,6 +78,7 @@ def probe(
 # render
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def render(
     inp: Path = typer.Argument(..., help="A single probe JSON or a directory of them."),
@@ -92,10 +99,15 @@ def render(
 # pull
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def pull(
-    picks_dir: Path = typer.Argument(..., help="Directory of picks-v1 JSON files (one per dataset)."),
-    probes_dir: Path = typer.Option(Path("probes"), "--probes", help="Where to find probes-v1 JSON files (for URLs)."),
+    picks_dir: Path = typer.Argument(
+        ..., help="Directory of picks-v1 JSON files (one per dataset)."
+    ),
+    probes_dir: Path = typer.Option(
+        Path("probes"), "--probes", help="Where to find probes-v1 JSON files (for URLs)."
+    ),
     out: Path = typer.Option(Path("pulled"), "--out", "-o"),
     force: bool = typer.Option(False, "--force"),
 ) -> None:
@@ -161,6 +173,7 @@ def pull(
 # assemble
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def assemble(
     pulled_dir: Path = typer.Argument(..., help="Directory of pulled-v1 sidecars + Parquet data."),
@@ -190,10 +203,13 @@ def assemble(
 # augment
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def augment(
     h5ad: Path = typer.Argument(..., help="Input h5ad to augment (modified in place)."),
-    pulled_dir: Path = typer.Option(..., "--pulled", help="Directory of pulled-v1 sidecars + Parquet data."),
+    pulled_dir: Path = typer.Option(
+        ..., "--pulled", help="Directory of pulled-v1 sidecars + Parquet data."
+    ),
 ) -> None:
     """Stage 5b: augment an existing h5ad's obs with picked author columns."""
     import pyarrow.parquet as pq
@@ -217,6 +233,7 @@ def augment(
 # ---------------------------------------------------------------------------
 # pick (optional — requires picker-anthropic extra)
 # ---------------------------------------------------------------------------
+
 
 @app.command()
 def pick(
@@ -254,9 +271,12 @@ def pick(
 # validate
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def validate(
-    json_path: Path = typer.Argument(..., help="A JSON artefact (probe / picks / pulled) to validate."),
+    json_path: Path = typer.Argument(
+        ..., help="A JSON artefact (probe / picks / pulled) to validate."
+    ),
 ) -> None:
     """Validate a JSON artefact against its schema (via Pydantic)."""
     text = json_path.read_text()
@@ -280,8 +300,51 @@ def validate(
 
 
 # ---------------------------------------------------------------------------
+# verify
+# ---------------------------------------------------------------------------
+
+
+@app.command()
+def verify(
+    url: str = typer.Argument(..., help="URL or path to a store/container to read as obs."),
+    shallow: bool = typer.Option(False, "--shallow", help="Skip deep (full-column) checks."),
+) -> None:
+    """Open a source with the built-in readers and verify its obs handle.
+
+    The acceptance gate for reading a source: exit 0 means a reader handled the
+    URL and the obs view satisfies the ObsHandle contract (n_cells / joinids /
+    per-column decoding, and — unless --shallow — full-column lengths). Exit 1
+    prints why it failed. An improviser normalises an unreadable source until
+    this passes.
+    """
+    from .readers import NoReaderError, check_obs_handle, open_obs
+
+    try:
+        handle = open_obs(url)
+    except NoReaderError as e:
+        typer.echo(f"NO READER  {e}", err=True)
+        raise typer.Exit(1)
+    except Exception as e:
+        typer.echo(f"OPEN FAILED  {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1)
+
+    problems = check_obs_handle(handle, deep=not shallow)
+    if problems:
+        typer.echo(f"FAILED  {url}", err=True)
+        for p in problems:
+            typer.echo(f"  - {p}", err=True)
+        handle.close()
+        raise typer.Exit(1)
+    typer.echo(
+        f"OK  {url}  ->  {handle.n_cells():,} cells, {len(handle.list_columns())} obs columns"
+    )
+    handle.close()
+
+
+# ---------------------------------------------------------------------------
 # version
 # ---------------------------------------------------------------------------
+
 
 @app.command()
 def version() -> None:
@@ -292,6 +355,7 @@ def version() -> None:
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+
 
 def _iter_probes(inp: Path) -> list[Path]:
     if inp.is_dir():

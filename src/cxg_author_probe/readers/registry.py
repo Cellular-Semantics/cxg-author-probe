@@ -16,6 +16,7 @@ from importlib.metadata import entry_points
 from urllib.parse import urlparse
 
 from .base import ObsHandle, ObsReader
+from .errors import NoReaderError
 from .h5ad import H5adReader
 from .tiledbsoma import TileDBSomaReader
 from .zarr import ZarrReader
@@ -112,7 +113,7 @@ def pick_reader(url: str) -> type:
     for reader_cls in _REGISTRY:
         if _scheme_match(reader_cls, url):
             return reader_cls
-    raise ValueError(f"No registered reader can handle URL: {url!r}")
+    raise NoReaderError(url, tried=tuple(r.__name__ for r in _REGISTRY))
 
 
 def open_obs(url: str) -> ObsHandle:
