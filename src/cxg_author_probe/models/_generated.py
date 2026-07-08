@@ -207,6 +207,136 @@ class ColumnDescriptor(BaseModel):
     """
 
 
+class AnnotationMethod(Enum):
+    """
+    How the annotations were made.
+    """
+
+    algorithmic = 'algorithmic'
+    manual = 'manual'
+    both = 'both'
+
+
+class AutomatedAnnotation(BaseModel):
+    algorithm_name: str | None = None
+    algorithm_version: str | None = None
+    algorithm_repo_url: str | None = None
+    reference_location: str | None = None
+
+
+class Labelset(BaseModel):
+    """
+    A CAS labelset (annotation key). Local extension adds 'role'.
+    """
+
+    name: str
+    """
+    Name of the annotation key (obs column).
+    """
+    description: str | None = None
+    annotation_method: AnnotationMethod | None = None
+    """
+    How the annotations were made.
+    """
+    rank: int | None = Field(None, ge=0)
+    """
+    Relative granularity; 0 = most granular/specific.
+    """
+    role: str | None = Field(
+        None, examples=['author_cell_type', 'transferred', 'cluster']
+    )
+    """
+    Local extension: functional role. Free text (open) with recommended values; drives routing, not enumerated as a hard constraint.
+    """
+    automated_annotation: AutomatedAnnotation | None = None
+
+
+class TransferredAnnotation(BaseModel):
+    """
+    A label transferred from another source. CAS-BICAN shape; local extension adds cell_count/cell_ratio. Reused for integration provenance.
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    transferred_cell_label: str
+    source_taxonomy: str | None = None
+    """
+    PURL/DOI of the source taxonomy or contributing study.
+    """
+    source_node_accession: str | None = None
+    algorithm_name: str | None = None
+    comment: str | None = None
+    cell_count: int | None = Field(None, ge=0)
+    """
+    Local extension: cells in this set carrying the transferred label.
+    """
+    cell_ratio: float | None = Field(None, ge=0.0, le=1.0)
+    """
+    Local extension: fraction of the set carrying the transferred label.
+    """
+
+
+class CompositionValue(BaseModel):
+    """
+    One value in a descriptor distribution. 'author_value' is verbatim; 'value'/'ontology_term_id' are additive mapped forms.
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    author_value: str | float
+    """
+    Verbatim author value (may already be a CURIE).
+    """
+    value: str | None = None
+    """
+    Human-readable mapped value.
+    """
+    ontology_term_id: str | None = None
+    """
+    Mapped ontology CURIE, e.g. UBERON:0000966, HsapDv:0000048.
+    """
+    cell_count: int | None = Field(None, ge=0)
+    cell_ratio: float | None = Field(None, ge=0.0, le=1.0)
+
+
+class Status(Enum):
+    candidate = 'candidate'
+    unresolved = 'unresolved'
+    asta = 'asta'
+    local = 'local'
+    needs_pdf = 'needs_pdf'
+
+
+class SubatlasCandidate(BaseModel):
+    doi: str | None = None
+    title: str | None = None
+    year: int | None = None
+    corpus_id: str | None = None
+    venue: str | None = None
+
+
+class SourceType(Enum):
+    manual = 'manual'
+    published_zarr = 'published_zarr'
+    local_h5ad = 'local_h5ad'
+    local_zarr = 'local_zarr'
+    cellxgene = 'cellxgene'
+    cap = 'cap'
+    spreadsheet = 'spreadsheet'
+
+
+class DataProvenance(BaseModel):
+    source_type: SourceType
+    dataset_id: str | None = None
+    source_url: str | None = None
+    file_path: str | None = None
+    obs_column: str | None = None
+    n_cells_total: int | None = None
+    extracted_at: str | None = None
+
+
 class ProbeV1(BaseModel):
     """
     One JSON file per dataset, emitted by `cxg-author probe`. Describes the obs schema, per-column sample, and probe cost — without ever reading the expression matrix. Source-format agnostic: the same schema serves h5ad, anndata-zarr, tiledbsoma, parquet, …
@@ -233,4 +363,149 @@ class ProbeV1(BaseModel):
     Map: obs column name -> descriptor + sample. `_index` and other source-internal pseudo-columns are filtered out at probe time.
     """
     probe_meta: ProbeMeta
+
+
+class CompositionCategory(BaseModel):
+    """
+    The distribution of one descriptor category over the cell set.
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    author_field_name: str | None = None
+    """
+    The original obs column this category came from.
+    """
+    values: list[CompositionValue]
+
+
+class SubatlasPaper(BaseModel):
+    label: str
+    first_author: str | None = None
+    year: int | None = None
+    venue: str | None = None
+    total_cells: int | None = None
+    doi: str | None = None
+    status: Status | None = None
+    proposed_doi: str | None = None
+    proposed: list[SubatlasCandidate] | None = None
+
+
+class AtlasPaper(BaseModel):
+    """
+    Atlas publication provenance (optional local block; filled by a downstream report workflow).
+    """
+
+    doi: str = Field(..., pattern='^10\\.\\d{4,}(\\.\\d+)?/.+')
+    title: str | None = None
+    pmcid: str | None = None
+    pmid: str | None = None
+    abstract: str | None = None
+    authors: list[str] | None = None
+    local_text_path: str | None = None
+    subatlas_papers: list[SubatlasPaper] | None = None
+    data_provenance: DataProvenance | None = None
+
+
+class Annotation(BaseModel):
+    """
+    One annotated cell set. Closed set (additionalProperties:false) — arbitrary obs goes in author_annotation_fields, descriptor distributions in composition.
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    labelset: str
+    """
+    Name of the labelset this annotation belongs to.
+    """
+    cell_label: str = Field(..., min_length=1)
+    """
+    Verbatim author label for the cell set.
+    """
+    cell_fullname: str | None = None
+    """
+    Full-length name (downstream report).
+    """
+    cell_ontology_term_id: str | None = None
+    """
+    CL (or CL-extending) term id (downstream map).
+    """
+    cell_ontology_term: str | None = None
+    """
+    Human-readable label for cell_ontology_term_id.
+    """
+    cell_set_accession: str | None = None
+    """
+    Stable id for this cell set, independent of cell_label.
+    """
+    parent_cell_set_accession: str | None = None
+    """
+    Accession of the cell set that subsumes this one (hierarchy).
+    """
+    n_cells: int | None = Field(None, ge=0)
+    """
+    Local extension: number of cells in the set.
+    """
+    rationale: str | None = None
+    """
+    Free-text evidence/justification (downstream report).
+    """
+    rationale_dois: list[str] | None = None
+    marker_gene_evidence: list[str] | None = None
+    negative_marker_gene_evidence: list[str] | None = None
+    synonyms: list[str] | None = None
+    transferred_annotations: list[TransferredAnnotation] | None = None
+    """
+    CAS slot reused for integration provenance (author labels inherited from contributing datasets).
+    """
+    composition: dict[str, CompositionCategory] | None = None
+    """
+    Local extension: cell-set-level distributions over descriptor categories.
+    """
+    author_annotation_fields: dict[str, Any] | None = None
+    """
+    Arbitrary UNMAPPED obs fields, verbatim. Must not duplicate a labelset or a composition category.
+    """
+
+
+class CasV1(BaseModel):
+    """
+    A cell-set-level annotation collection shaped after the Cell Annotation Schema (CAS, general + BICAN) with local extensions. The module (cxg-author-probe) emits the STRUCTURAL skeleton from a dataset (labelsets + per-cell-set annotations with counts + hierarchy + data provenance); downstream consumers progressively enrich the same doc with ontology mappings (composition/cell_ontology_term_id), report fields (rationale/markers), and atlas-paper 'source'. Local extensions: per-cell-set 'composition' (cell-set-level generalisation of CxG cell-level descriptor fields), cell_count/cell_ratio on transferred annotations, labelset 'rank'/'role', and an optional 'source' block carrying atlas-paper provenance for a report workflow.
+    """
+
+    schema_version: Literal['cas-v1']
+    title: str | None = None
+    """
+    Dataset title (CAS core).
+    """
+    description: str | None = None
+    """
+    Dataset description (CAS core).
+    """
+    matrix_file_id: str | None = None
+    """
+    Resolvable target for the cell-by-gene matrix: URL or filename of the h5ad/zarr the annotations describe. Looser than CAS's namespace:accession form so a plain zarr/h5ad URL or path is valid.
+    """
+    cellannotation_schema_version: str | None = None
+    """
+    CAS version this document targets.
+    """
+    data_provenance: DataProvenance | None = None
+    """
+    Where the annotations were extracted from (the dataset). Filled by the producing module.
+    """
+    source: AtlasPaper | None = None
+    """
+    Optional local extension: atlas-paper provenance (DOI, subatlas papers) consumed by a downstream report workflow. Not part of CAS core and not produced by the module.
+    """
+    labelsets: list[Labelset]
+    """
+    Annotation keys. One labelset per cell-type obs column.
+    """
+    annotations: list[Annotation]
+    """
+    Per-cell-set annotations, each tied to a labelset + cell_label.
+    """
 

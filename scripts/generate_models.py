@@ -23,6 +23,7 @@ SCHEMA_FILES = [
     ("ProbeV1", "probe-v1.schema.json"),
     ("PicksV1", "picks-v1.schema.json"),
     ("PulledV1", "pulled-v1.schema.json"),
+    ("CasV1", "cas-v1.schema.json"),
 ]
 
 

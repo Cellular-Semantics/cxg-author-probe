@@ -22,7 +22,7 @@ import typer
 from ._version import __version__
 from .assemble import augment_h5ad as _augment_h5ad
 from .assemble import to_long_table
-from .models import PicksV1, ProbeV1, PulledV1
+from .models import Format, PicksV1, ProbeV1, PulledV1
 from .probe import probe as _probe
 from .prompt import build_prompt as _build_prompt
 from .pull import pull_full_column as _pull_full_column
@@ -293,10 +293,91 @@ def validate(
         PicksV1.model_validate_json(text)
     elif sv == "pulled-v1":
         PulledV1.model_validate_json(text)
+    elif sv == "cas-v1":
+        from .models import CasV1
+
+        CasV1.model_validate_json(text)
     else:
         typer.echo(f"unknown schema_version: {sv!r}", err=True)
         raise typer.Exit(2)
     typer.echo(f"OK  {json_path}  ({sv})")
+
+
+# ---------------------------------------------------------------------------
+# cas (assemble the structural cas-v1 skeleton)
+# ---------------------------------------------------------------------------
+
+
+def _source_type(url: str, fmt: Format) -> str:
+    """Map a probe source (url + format) to a DataProvenance source_type."""
+    from urllib.parse import urlparse
+
+    is_zarr = fmt == Format.anndata_zarr
+    scheme = urlparse(url).scheme
+    if scheme in ("", "file"):
+        return "local_zarr" if is_zarr else "local_h5ad"
+    return "published_zarr" if is_zarr else "cellxgene"
+
+
+@app.command()
+def cas(
+    pulled_dir: Path = typer.Argument(..., help="Directory of pulled-v1 sidecars + Parquet."),
+    probes_dir: Path = typer.Option(
+        Path("probes"), "--probes", help="Where to find probe-v1 JSON files (for source URL/format)."
+    ),
+    out: Path = typer.Option(Path("cas"), "--out", "-o", help="Output dir for cas-v1 JSON per dataset."),
+) -> None:
+    """Stage 5c: assemble the STRUCTURAL cas-v1 skeleton — labelsets + per-cell-set
+    annotations (counts, accession, hierarchy) — from pulled author cell-type columns.
+
+    Map/report fields (ontology ids, rationale, atlas-paper source) and
+    composition/transferred_annotations are left for downstream enrichment.
+    """
+    import pyarrow.parquet as pq
+
+    from .cas import build_cas, validate_cas
+
+    out.mkdir(parents=True, exist_ok=True)
+    for sidecar_path in sorted(pulled_dir.glob("*.json")):
+        sidecar = PulledV1.model_validate_json(sidecar_path.read_text())
+        data_path = Path(sidecar.data_path)
+        if not data_path.is_absolute():
+            data_path = sidecar_path.parent / data_path.name
+        df = pq.read_table(data_path).to_pandas()
+
+        labelset_columns = {c: df[c].tolist() for c in sidecar.picks if c in df.columns}
+        if not labelset_columns:
+            typer.echo(f"  {sidecar.dataset_id}: no picked columns present; skipping", err=True)
+            continue
+
+        matrix_file_id = source_url = None
+        source_type = "cellxgene"
+        probe_path = probes_dir / f"{sidecar.dataset_id}.json"
+        if probe_path.exists():
+            probe = ProbeV1.model_validate_json(probe_path.read_text())
+            matrix_file_id = source_url = probe.source.url
+            source_type = _source_type(probe.source.url, probe.source.format)
+
+        doc = build_cas(
+            labelset_columns,
+            dataset_id=sidecar.dataset_id,
+            matrix_file_id=matrix_file_id,
+            source_url=source_url,
+            source_type=source_type,
+        )
+        problems = validate_cas(doc)
+        if problems:
+            typer.echo(f"  {sidecar.dataset_id}: assembled cas doc is INVALID:", err=True)
+            for pr in problems:
+                typer.echo(f"    - {pr}", err=True)
+            raise typer.Exit(1)
+
+        target = out / f"{sidecar.dataset_id}.json"
+        target.write_text(json.dumps(doc, indent=2) + "\n")
+        typer.echo(
+            f"  {sidecar.dataset_id}: {len(doc['labelsets'])} labelsets, "
+            f"{len(doc['annotations'])} annotations -> {target}"
+        )
 
 
 # ---------------------------------------------------------------------------
