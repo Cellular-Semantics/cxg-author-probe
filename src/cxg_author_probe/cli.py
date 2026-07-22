@@ -278,7 +278,15 @@ def validate(
         ..., help="A JSON artefact (probe / picks / pulled) to validate."
     ),
 ) -> None:
-    """Validate a JSON artefact against its schema (via Pydantic)."""
+    """Validate a JSON artefact against its schema (via Pydantic).
+
+    Exit 0 on success; exit 2 on invalid JSON, unknown ``schema_version``, or a
+    schema-validation failure. Validation errors are printed as concise field
+    messages (not a traceback) so a caller — e.g. the plugin write-hook — can
+    relay them as a correction signal.
+    """
+    from pydantic import ValidationError
+
     text = json_path.read_text()
     # Sniff schema_version.
     try:
@@ -287,18 +295,23 @@ def validate(
         typer.echo(f"invalid JSON: {e}", err=True)
         raise typer.Exit(2)
     sv = sniff.get("schema_version", "")
-    if sv == "probe-v1":
-        ProbeV1.model_validate_json(text)
-    elif sv == "picks-v1":
-        PicksV1.model_validate_json(text)
-    elif sv == "pulled-v1":
-        PulledV1.model_validate_json(text)
-    elif sv == "cas-v1":
+    models = {"probe-v1": ProbeV1, "picks-v1": PicksV1, "pulled-v1": PulledV1}
+    if sv == "cas-v1":
         from .models import CasV1
 
-        CasV1.model_validate_json(text)
+        model = CasV1
+    elif sv in models:
+        model = models[sv]
     else:
         typer.echo(f"unknown schema_version: {sv!r}", err=True)
+        raise typer.Exit(2)
+    try:
+        model.model_validate_json(text)
+    except ValidationError as e:
+        typer.echo(f"INVALID  {json_path}  ({sv})", err=True)
+        for err in e.errors():
+            loc = ".".join(str(p) for p in err["loc"]) or "(root)"
+            typer.echo(f"  - {loc}: {err['msg']}", err=True)
         raise typer.Exit(2)
     typer.echo(f"OK  {json_path}  ({sv})")
 

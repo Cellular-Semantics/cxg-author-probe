@@ -12,5 +12,18 @@
   "repository": "https://github.com/Cellular-Semantics/cxg-author-probe",
   "keywords": ["cellxgene", "single-cell", "author-annotations", "h5ad"],
   "skills": "./skills/",
-  "agents": ["./agents/author-category-picker.md"]
+  "agents": ["./agents/author-category-picker.md"],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/validate_artifact.py"
+          }
+        ]
+      }
+    ]
+  }
 }
