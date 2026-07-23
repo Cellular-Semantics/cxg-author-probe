@@ -35,6 +35,41 @@ app = typer.Typer(
 DEFAULT_CDN = "https://datasets.cellxgene.cziscience.com/{dataset_id}.h5ad"
 
 
+def _load_artifact(path: Path, model, skipped: list[str]):
+    """Validate one JSON artifact in a batch loop; skip-and-warn on failure.
+
+    A single malformed file in a globbed directory must not abort the whole
+    batch with a raw traceback. On invalid JSON or a schema mismatch, prints a
+    concise ``SKIP`` line, records the file in ``skipped``, and returns None so
+    the caller ``continue``s. Callers exit non-zero at the end if anything was
+    skipped, so scripts/CI still notice.
+    """
+    from pydantic import ValidationError
+
+    try:
+        return model.model_validate_json(path.read_text())
+    except ValidationError as e:
+        first = e.errors()[0]
+        loc = ".".join(str(p) for p in first["loc"]) or "(root)"
+        typer.echo(
+            f"  SKIP {path.name}: not a valid {model.__name__} — {loc}: {first['msg']}",
+            err=True,
+        )
+    except (json.JSONDecodeError, OSError) as e:
+        typer.echo(f"  SKIP {path.name}: unreadable JSON — {e}", err=True)
+    skipped.append(path.name)
+    return None
+
+
+def _exit_if_skipped(skipped: list[str]) -> None:
+    """After a batch loop, fail non-zero (but don't crash) if files were skipped."""
+    if skipped:
+        typer.echo(
+            f"skipped {len(skipped)} invalid file(s): {', '.join(skipped)}", err=True
+        )
+        raise typer.Exit(1)
+
+
 # ---------------------------------------------------------------------------
 # probe
 # ---------------------------------------------------------------------------
@@ -113,8 +148,11 @@ def pull(
 ) -> None:
     """Stage 4: pull full picked columns. Reuses the source URL from each probe."""
     out.mkdir(parents=True, exist_ok=True)
+    skipped: list[str] = []
     for pick_path in sorted(picks_dir.glob("*.json")):
-        picks = PicksV1.model_validate_json(pick_path.read_text())
+        picks = _load_artifact(pick_path, PicksV1, skipped)
+        if picks is None:
+            continue
         probe_path = probes_dir / f"{picks.dataset_id}.json"
         if not probe_path.exists():
             typer.echo(f"  {picks.dataset_id}: probe not found at {probe_path}", err=True)
@@ -167,6 +205,7 @@ def pull(
             f"  {picks.dataset_id}: {len(present_picks)} cols pulled "
             f"({stats.get('n', 0) / 1e6:.2f} MB), missing={missing or '[]'}"
         )
+    _exit_if_skipped(skipped)
 
 
 # ---------------------------------------------------------------------------
@@ -183,8 +222,11 @@ def assemble(
     import pyarrow.parquet as pq
 
     per_dataset: dict = {}
+    skipped: list[str] = []
     for sidecar_path in sorted(pulled_dir.glob("*.json")):
-        sidecar = PulledV1.model_validate_json(sidecar_path.read_text())
+        sidecar = _load_artifact(sidecar_path, PulledV1, skipped)
+        if sidecar is None:
+            continue
         data_path = Path(sidecar.data_path)
         if not data_path.is_absolute():
             data_path = sidecar_path.parent / data_path.name
@@ -197,6 +239,7 @@ def assemble(
     long = to_long_table(per_dataset)
     long.to_parquet(out, index=False)
     typer.echo(f"  wrote {len(long):,} rows to {out}")
+    _exit_if_skipped(skipped)
 
 
 # ---------------------------------------------------------------------------
@@ -215,8 +258,11 @@ def augment(
     import pyarrow.parquet as pq
 
     per_dataset: dict = {}
+    skipped: list[str] = []
     for sidecar_path in sorted(pulled_dir.glob("*.json")):
-        sidecar = PulledV1.model_validate_json(sidecar_path.read_text())
+        sidecar = _load_artifact(sidecar_path, PulledV1, skipped)
+        if sidecar is None:
+            continue
         data_path = Path(sidecar.data_path)
         if not data_path.is_absolute():
             data_path = sidecar_path.parent / data_path.name
@@ -228,6 +274,7 @@ def augment(
 
     _augment_h5ad(h5ad, per_dataset)
     typer.echo(f"  augmented {h5ad}")
+    _exit_if_skipped(skipped)
 
 
 # ---------------------------------------------------------------------------
@@ -253,8 +300,11 @@ def pick(
         raise typer.Exit(2)
 
     out.mkdir(parents=True, exist_ok=True)
+    skipped: list[str] = []
     for probe_path in sorted(probes_dir.glob("*.json")):
-        p = ProbeV1.model_validate_json(probe_path.read_text())
+        p = _load_artifact(probe_path, ProbeV1, skipped)
+        if p is None:
+            continue
         target = out / f"{p.dataset_id}.json"
         if target.exists() and not force:
             typer.echo(f"  {p.dataset_id}: cached")
@@ -265,6 +315,7 @@ def pick(
             typer.echo(f"  {p.dataset_id}: {picks.picks}")
         except Exception as e:
             typer.echo(f"  {p.dataset_id}: ERR {e}", err=True)
+    _exit_if_skipped(skipped)
 
 
 # ---------------------------------------------------------------------------
@@ -351,8 +402,11 @@ def cas(
     from .cas import build_cas, validate_cas
 
     out.mkdir(parents=True, exist_ok=True)
+    skipped: list[str] = []
     for sidecar_path in sorted(pulled_dir.glob("*.json")):
-        sidecar = PulledV1.model_validate_json(sidecar_path.read_text())
+        sidecar = _load_artifact(sidecar_path, PulledV1, skipped)
+        if sidecar is None:
+            continue
         data_path = Path(sidecar.data_path)
         if not data_path.is_absolute():
             data_path = sidecar_path.parent / data_path.name
@@ -391,6 +445,7 @@ def cas(
             f"  {sidecar.dataset_id}: {len(doc['labelsets'])} labelsets, "
             f"{len(doc['annotations'])} annotations -> {target}"
         )
+    _exit_if_skipped(skipped)
 
 
 # ---------------------------------------------------------------------------

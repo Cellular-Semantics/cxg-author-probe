@@ -14,9 +14,15 @@ artifacts. It:
    so the hook always matches the user's installed schema/model version and
    stays a thin wrapper (no duplicated validation logic).
 
-Exit codes:
-    0 — valid, or not one of our artifacts, or the CLI is unavailable
-    2 — recognised artifact that failed validation (stderr → model self-corrects)
+Exit codes (PostToolUse semantics: 0 is silent; non-zero surfaces in the
+transcript; the write already happened so nothing is truly "blocked"):
+    0 — valid, or not one of our artifacts (silent)
+    2 — recognised artifact that FAILED validation (stderr → shown in transcript
+        so the failure is seen and, in practice, corrected)
+    1 — recognised artifact but the ``cxg-author`` CLI is not on the session's
+        PATH, so enforcement could NOT run. Deliberately visible (not silent)
+        rather than a false all-clear — install the CLI where ``claude`` can see
+        it (e.g. ``pipx install cxg-author-probe``).
 """
 
 from __future__ import annotations
@@ -55,14 +61,17 @@ def main() -> int:
 
     cli = shutil.which("cxg-author")
     if cli is None:
-        # The CLI is a precondition for the plugin at all; if it is missing the
-        # skill would already have failed. Don't block unrelated work over an
-        # environment gap — warn quietly and pass.
+        # We were asked to validate a real artifact but the CLI isn't reachable
+        # from this session's PATH — so enforcement CANNOT run. Surface it
+        # (exit 1 → visible in the transcript) rather than exit 0, which would
+        # be a silent false all-clear. Non-blocking: the write stands.
         print(
-            f"cxg-author-probe: cannot validate {file_path} — `cxg-author` CLI not on PATH.",
+            f"cxg-author-probe: enforcement SKIPPED for {file_path} — "
+            "`cxg-author` CLI not on this session's PATH. Install it where "
+            "`claude` can see it (e.g. `pipx install cxg-author-probe`).",
             file=sys.stderr,
         )
-        return 0
+        return 1
 
     proc = subprocess.run(
         [cli, "validate", file_path],

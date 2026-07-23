@@ -68,20 +68,25 @@ def test_validate_unknown_schema_version(tmp_path: Path):
 # --- The plugin hook script ---------------------------------------------------
 
 
-def _run_hook(file_path: str) -> subprocess.CompletedProcess[str]:
-    """Invoke the hook as Claude Code would: JSON on stdin, cxg-author on PATH."""
-    env = {
-        **os.environ,
+def _run_hook(file_path: str, *, cli_on_path: bool = True) -> subprocess.CompletedProcess[str]:
+    """Invoke the hook as Claude Code would: JSON on stdin.
+
+    ``cli_on_path`` toggles whether ``cxg-author`` is reachable, so we can test
+    both the enforcing path and the "CLI missing → visible skip" path.
+    """
+    if cli_on_path:
         # Ensure the `cxg-author` console script (installed alongside this
         # interpreter) resolves inside the hook's subprocess.
-        "PATH": os.path.dirname(sys.executable) + os.pathsep + os.environ.get("PATH", ""),
-    }
+        path = os.path.dirname(sys.executable) + os.pathsep + os.environ.get("PATH", "")
+    else:
+        # A PATH with no `cxg-author` on it.
+        path = ""
     return subprocess.run(
         [sys.executable, str(HOOK)],
         input=json.dumps({"tool_input": {"file_path": file_path}}),
         capture_output=True,
         text=True,
-        env=env,
+        env={**os.environ, "PATH": path},
     )
 
 
@@ -119,3 +124,23 @@ def test_hook_noops_on_non_json_file(tmp_path: Path):
 def test_hook_noops_on_missing_file(tmp_path: Path):
     res = _run_hook(str(tmp_path / "does_not_exist.json"))
     assert res.returncode == 0
+
+
+def test_hook_visibly_skips_when_cli_missing(tmp_path: Path):
+    # Recognised artifact, but no `cxg-author` on PATH → enforcement can't run.
+    # Must be VISIBLE (exit 1), not a silent exit-0 false all-clear.
+    p = tmp_path / "picks.json"
+    p.write_text(json.dumps(GOOD_PICKS))
+    res = _run_hook(str(p), cli_on_path=False)
+    assert res.returncode == 1
+    assert "enforcement SKIPPED" in res.stderr
+    assert "not on this session's PATH" in res.stderr
+
+
+def test_hook_silent_on_non_artifact_even_when_cli_missing(tmp_path: Path):
+    # A non-artifact write must stay silent regardless of CLI availability.
+    p = tmp_path / "other.json"
+    p.write_text(json.dumps({"foo": "bar"}))
+    res = _run_hook(str(p), cli_on_path=False)
+    assert res.returncode == 0
+    assert res.stderr == ""
